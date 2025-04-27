@@ -1,2 +1,6 @@
 *.json
 *.pyc
+*jsonl
+*.pth
+*pkl
+*.pt
