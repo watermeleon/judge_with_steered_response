@@ -115,6 +115,7 @@ def format_question(question: str, tokenizer=None, system_prompt="You are a help
     if "gemma" in tokenizer_name:
         system_name = "model"
         messages = [
+            # {"role": system_name, "content": system_prompt},
             {"role": "user", "content": question}
         ]
 
