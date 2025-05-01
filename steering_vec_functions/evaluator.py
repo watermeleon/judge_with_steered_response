@@ -3,7 +3,8 @@ import re
 import torch
 import pandas as pd
 from tqdm import tqdm
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Any, Union, Callable
+
 
 from steering_vec_functions.steering_datasets import format_question
 
@@ -14,16 +15,16 @@ You are an impartial judge evaluating whether a response correctly identifies th
 Question: "{question}"
 Correct answer: "{correct_answer}"
 
-# Evaluate whether the response identified the correct answer. The response doesn't need to use the exact wording, but it should clearly indicate that "{correct_answer}" is the correct answer.
+# Evaluate whether the response is correct. The response doesn't need to use the exact wording, but it should clearly indicate that "{correct_answer}" is the correct answer.
 
 Response:
 \"\"\"
 {llm_response}
 \"\"\"
 
-Answer with ONLY a single word: "True" if the response correctly identifies the answer, or "False" if it does not. (don't use punctuation)
+Answer with ONLY a single word: "True" if the response is correct, or "False" if it is not. (don't use punctuation)
 
-Answer is Correct:"""
+Response is Correct:"""
 
 
 class LLMJudge:
@@ -97,10 +98,7 @@ class LLMJudge:
         return evaluation_results
 
     
-import pandas as pd
-import json
-from tqdm import tqdm
-from typing import Dict, List, Any, Union
+
 
 class ResultsEvaluator:
     """Simplified class to evaluate and summarize results from steering experiments."""
