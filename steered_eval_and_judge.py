@@ -66,8 +66,10 @@ def main():
     print(f"Steering vector optimized with final loss: {loss_info['loss']:.4f}")
 
     # Save steering vector
+    # steering_vector.load(model_name=args.model_name)
     steering_vector.save(model_name=args.model_name)
     print("Steering vector saved successfully")
+    print(f"Steering Vector: {steering_vector.vector}")
     
     # Load dataset
     print("Loading dataset...")

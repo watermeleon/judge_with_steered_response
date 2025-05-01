@@ -95,6 +95,7 @@ class SteeringVector:
     def load(self, filepath=None, model_name=None, layer_name=None):
         """Load a steering vector from a file."""
         from steering_vec_functions.load_store_vectors import load_steering_vector
-        
-        self.vector = load_steering_vector(filepath, model_name, layer_name or str(self.layer))
+        # def load_steering_vector(model_name, layer_name, exp_name="", folder="./steering_vectors"):
+
+        self.vector = load_steering_vector(model_name, layer_name or str(self.layer))
         return self.vector

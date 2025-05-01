@@ -16,9 +16,9 @@ def get_model_and_tokenizer(model_name: str, use_quantizer=True) -> Tuple:
     # Load the model
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        quantization_config=bnb_config,
-        torch_dtype="auto",
-        low_cpu_mem_usage=True,
+        # quantization_config=bnb_config,
+        # torch_dtype="auto",
+        # low_cpu_mem_usage=True,
     )
     
     # Move model to appropriate device
