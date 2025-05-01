@@ -7,12 +7,13 @@ from steering_vec_functions.steering_datasets import format_question
 class SteeringVector:
     """Class to handle steering vector optimization and application."""
     
-    def __init__(self, model, tokenizer, layer=15):
+    def __init__(self, model, tokenizer, layer=15, generation_length = 20):
         self.model = model
         self.tokenizer = tokenizer
         self.layer = layer
         self.vector = None
         self.loss_info = None
+        self.generation_length = generation_length 
     
     def optimize(self, prompt, incorrect_completion, correct_completion, 
                 max_iters=20, lr=0.1, debug=False) -> Tuple[torch.Tensor, Dict]:
@@ -56,8 +57,11 @@ class SteeringVector:
         )
         return self.vector, self.loss_info
     
-    def get_response(self, question, max_tokens=50):
+    def get_response(self, question, max_tokens=None):
         """Get a normal (unsteered) response from the model."""
+        if max_tokens is None:
+            max_tokens = self.generation_length
+
         formatted_question = format_question(question, self.tokenizer)
         input_ids = self.tokenizer(formatted_question, return_tensors='pt').input_ids
         
@@ -66,11 +70,13 @@ class SteeringVector:
         
         return self.tokenizer.batch_decode(generated_tokens_only, skip_special_tokens=True)[0]
     
-    def get_steered_response(self, question, max_tokens=50):
+    def get_steered_response(self, question, max_tokens=None):
         """Get a steered response using the optimized vector."""
         if self.vector is None:
             raise ValueError("Steering vector not optimized yet. Call optimize() first.")
-        
+        if max_tokens is None:
+            max_tokens = self.generation_length
+
         formatted_question = format_question(question, self.tokenizer)
         steering_hook = (self.layer, steering_opt.make_steering_hook_hf(self.vector))
         
