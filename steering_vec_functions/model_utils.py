@@ -3,7 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from functools import partial
 from typing import Tuple
 
-def get_model_and_tokenizer(model_name: str, use_quantizer=True, low_memory_load=False) -> Tuple:
+def get_model_and_tokenizer(model_name: str, use_quantizer=False, low_memory_load=False) -> Tuple:
     """Load model and tokenizer with appropriate configuration."""
     print(f"Loading model: {model_name}")
     
