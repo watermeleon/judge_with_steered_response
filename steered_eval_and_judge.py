@@ -42,6 +42,9 @@ def parse_arguments():
                         help="Enable debug mode for steering.") 
     parser.add_argument("--answer_generation_length", type=int, default=10,
                         help="Load model with low memory usage.")
+    # add arg large_llm_judge
+    parser.add_argument("--large_llm_judge", action="store_true",
+                        help="Use large LLM judge for evaluation.")
     
     
     return parser.parse_args()
@@ -142,6 +145,10 @@ def main():
     # Create judge function
     # judge_fn = create_judge_function(model, tokenizer)
     
+    if args.large_llm_judge:
+        # Use large LLM judge
+        print("Using large LLM judge for evaluation...")
+        model, tokenizer = get_model_and_tokenizer("meta-llama/Llama-2-13b-chat-hf", low_memory_load=True)
     # Create LLM judge and evaluator
     llm_judge = LLMJudge(model, tokenizer=tokenizer)
     evaluator = ResultsEvaluator(llm_judge)
