@@ -41,7 +41,7 @@ class LLMJudge:
         """Initialize the LLM Judge with a model function."""
         self.model = model
         self.tokenizer = tokenizer
-        self._num_judge_toks = 150
+        self._num_judge_toks = 250
         self.exlcude_suggestion = True
     
     def prepare_judge_prompt(self, question_data: Dict[str, Any], llm_response: str) -> str:

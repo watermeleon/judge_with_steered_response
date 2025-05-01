@@ -35,7 +35,7 @@ class SteeringVector:
         )
         return self.vector, self.loss_info
     
-    def optimize_from_samples(self, samples, max_iters=20, lr=0.1, debug=False):
+    def optimize_from_samples(self, samples, max_iters=20, lr=0.1, max_norm=None, debug=False):
         """Optimize a steering vector using multiple samples."""
         datapoints = []
         for prompt, src_completions, dst_completions in samples:
@@ -54,6 +54,7 @@ class SteeringVector:
             max_iters=max_iters,
             lr=lr,
             debug=debug,
+            max_norm= max_norm,
         )
         return self.vector, self.loss_info
     

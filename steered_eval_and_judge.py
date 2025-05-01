@@ -1,5 +1,5 @@
 import argparse
-# import os
+import os
 
 # import os
 # os.environ["HF_HUB_OFFLINE"] = "1"
@@ -24,6 +24,7 @@ def parse_arguments():
                         help="Use quantizer for model loading.")
     parser.add_argument("--low_memory_load", action="store_true",
                         help="Load model with low memory usage.")
+    
     parser.add_argument("--layer", type=int, default=15, 
                         help="Layer to apply steering.")
     parser.add_argument("--num_iters", type=int, default=1, 
@@ -32,6 +33,9 @@ def parse_arguments():
                         help="Learning rate for optimization.")
     parser.add_argument("--debug_steer", action="store_true", 
                         help="Enable debug mode for steering.")
+    parser.add_argument("--max_norm", type=float, default=None,
+                        help="Max norm for steering vector optimization.")
+    
     parser.add_argument("--num_questions", type=int, default=2, 
                         help="Number of questions to evaluate.")
     parser.add_argument("--results_folder", type=str, default="results/", 
@@ -104,7 +108,8 @@ def main():
             optimization_samples,
             max_iters=args.num_iters,
             lr=args.lr,
-            debug=args.debug_steer
+            max_norm=args.max_norm,
+            debug=args.debug_steer,
         )
         # vector, loss_info = steering_vector.optimize(
         #     prompt=prompt, 
