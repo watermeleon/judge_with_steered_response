@@ -15,7 +15,12 @@ You are an impartial judge evaluating whether a response correctly identifies th
 Question: "{question}"
 Correct answer: "{correct_answer}"
 
-# Evaluate whether the response is correct. The response doesn't need to use the exact wording, but it should clearly indicate that "{correct_answer}" is the correct answer.
+# Evaluate whether the response is correct. 
+Consideration:
+- The response doesn't need to use the exact wording, but it should clearly indicate that "{correct_answer}" is the correct answer.
+- It is not enough for the correct answer to be mentioned; the response must also indicate that it is the correct answer.
+- The response should not contain any misleading information or suggest that the correct answer is incorrect.
+
 
 Response:
 \"\"\"
