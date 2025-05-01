@@ -1,8 +1,8 @@
 import argparse
 # import os
 
-import os
-os.environ["HF_HUB_OFFLINE"] = "1"
+# import os
+# os.environ["HF_HUB_OFFLINE"] = "1"
 
 import torch
 from functools import partial
