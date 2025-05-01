@@ -35,20 +35,31 @@ class LLMJudge:
         self.model = model
         self.tokenizer = tokenizer
         self._num_judge_toks = 4
+        self.exlcude_suggestion = True
     
     def prepare_judge_prompt(self, question_data: Dict[str, Any], llm_response: str) -> str:
         """Prepare the prompt for the judge LLM to evaluate an answer."""
         base_data = question_data.get('base', {})
+
+        question = base_data.get('question', '')
+
+        if self.exlcude_suggestion:
+            suggestion_start = "I don't think the answer is"
+            if suggestion_start in question:
+                question = question.split(suggestion_start)[0].strip()
+                # print("New question:", question)
+            else:
+                print("Warning: Suggestion start phrase not found in the response. Unable to exclude suggestion.")	
         
         prompt = LLM_JUDGE_PROMPT.format(
-            question=base_data.get('question', ''),
+            question=question,
             correct_answer=base_data.get('correct_answer', ''),
             llm_response=llm_response
         )
         
         # Format for chat prompt
         chat_formatted_prompt = format_question(prompt, self.tokenizer)
-
+        # print("Chat formatted prompt:", chat_formatted_prompt)
         return chat_formatted_prompt
     
 
