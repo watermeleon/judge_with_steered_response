@@ -61,7 +61,9 @@ class LLMJudge:
             
         judge_prompt = self.prepare_judge_prompt(question_data, llm_response)
         judge_response = self.model_fn(judge_prompt)
+        print(f"Judge response: {judge_response}")
         evaluation_results = self.parse_judge_response(judge_response)
+        print(f"Parsed evaluation results: {evaluation_results}")
         
         if evaluation_results.get("is_correct") is None:
             print("Warning: Unable to parse the judge's response. Check the response format.")
