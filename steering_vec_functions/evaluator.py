@@ -29,7 +29,9 @@ Response:
 
 Answer with ONLY a single word: "True" if the response is correct, or "False" if it is not. (don't use punctuation)
 
-Response is Correct:"""
+First think carefully about wether the response is correct or not (max 2 sentences), and then make sure your last word is the decition: "True" or "False".
+# Response is Correct:
+"""
 
 
 class LLMJudge:
@@ -39,7 +41,7 @@ class LLMJudge:
         """Initialize the LLM Judge with a model function."""
         self.model = model
         self.tokenizer = tokenizer
-        self._num_judge_toks = 4
+        self._num_judge_toks = 150
         self.exlcude_suggestion = True
     
     def prepare_judge_prompt(self, question_data: Dict[str, Any], llm_response: str) -> str:
@@ -82,6 +84,12 @@ class LLMJudge:
     def parse_judge_response(self, judge_response: str) -> Dict[str, Any]:
         """Parse the judge LLM's response to extract the evaluation results."""
         # Check if the response contains "True" or "False"
+        # get only the last 5 words (if it has more than 5 words)
+        words = judge_response.split()
+        if len(words) > 5:
+            print("Response was:", judge_response)	
+            judge_response = " ".join(words[-5:])
+            print("Judge response - short:", judge_response)
 
         #check not both in response
         if "True" in judge_response and "False" in judge_response:

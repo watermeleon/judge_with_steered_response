@@ -41,8 +41,8 @@ class SteeringVector:
         for prompt, src_completions, dst_completions in samples:
             datapoint = steering_opt.TrainingDatapoint(
                 format_question(prompt, self.tokenizer),
-                src_completions=src_completions,
-                dst_completions=dst_completions,
+                src_completions=[src_completions],
+                dst_completions=[dst_completions],
             )
             datapoints.append(datapoint)
             
