@@ -18,10 +18,13 @@ class SteeringVector:
     def optimize(self, prompt, incorrect_completion, correct_completion, 
                 max_iters=20, lr=0.1, debug=False) -> Tuple[torch.Tensor, Dict]:
         """Optimize a steering vector using a fixed example."""
+        incorrect_completion = [incorrect_completion] if incorrect_completion is not None else []
+        correct_completion = [correct_completion] if correct_completion is not None else []
+
         datapoint = steering_opt.TrainingDatapoint(
             format_question(prompt, self.tokenizer),
-            src_completions=[incorrect_completion],
-            dst_completions=[correct_completion],
+            src_completions=incorrect_completion,
+            dst_completions=correct_completion,
         )
         
         self.vector, self.loss_info = steering_opt.optimize_vector(
