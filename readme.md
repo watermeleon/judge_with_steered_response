@@ -4,7 +4,8 @@ This repository contains a framework for optimizing and evaluating steering vect
 
 
 ### Newer functions:
-`python feedback_steering_clean.py --feedback_subset poems --short_poems --low_memory_load --num_samples 5 `
+<!-- `python feedback_steering_clean.py --feedback_subset poems --short_poems --low_memory_load --num_samples 5 ` -->
+`python -m steering_vec_functions.feedback_steering_clean --feedback_subset poems --short_poems --low_memory_load --num_samples 2 --use_load_vector`
 
 For judges
 `python -m steering_vec_functions.judge.judge_responses_three_judges --input_file`

@@ -327,6 +327,7 @@ def main():
     # Output arguments
     parser.add_argument("--results_folder", type=str, default="results/responses/", help="Folder to save results")
     parser.add_argument("--do_steered", action="store_true", help="Whether to generate steered responses")
+    parser.add_argument("--use_load_vector", action="store_true", help="Whether to load the steering vector")
     parser.add_argument("--print_samples", action="store_true", help="Print the first 3 samples")
     
     args = parser.parse_args()
@@ -394,7 +395,7 @@ def main():
     # if args.do_steered:
         # Create steering vector
     steering_vector = create_steering_vector(
-        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, model_name=args.model_name
+        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, model_name=args.model_name, use_load_vector=args.use_load_vector
     )
     
     # Generate responses
