@@ -20,7 +20,7 @@ class SteeringVector:
         self.temperature = temperature
     
     def optimize(self, prompt, incorrect_completion, correct_completion, 
-                max_iters=20, lr=0.1, debug=False) -> Tuple[torch.Tensor, Dict]:
+                max_iters=20, lr=0.1, debug=False, max_norm=None) -> Tuple[torch.Tensor, Dict]:
         """Optimize a steering vector using a fixed example."""
         incorrect_completion = [incorrect_completion] if incorrect_completion is not None else []
         correct_completion = [correct_completion] if correct_completion is not None else []
@@ -39,6 +39,7 @@ class SteeringVector:
             max_iters=max_iters,
             lr=lr,
             debug=debug,
+            max_norm=max_norm,
         )
         return self.vector, self.loss_info
     
