@@ -141,10 +141,10 @@ def generate_model_responses(eval_list, steering_vector):
         # Generate responses based on available prompts
         if not is_prompt_only:
             item["base_response"] = steering_vector.get_response(item["base_prompt"])
-            print(f"Generated base response: {item['base_response'][:50]}...")
+            print(f"Generated base response: {item['base_response'][:100]}...")
         
         item["suggestive_response"] = steering_vector.get_response(item["suggestive_prompt"])
-        print(f"Generated suggestive response: {item['suggestive_response'][:50]}...")
+        print(f"Generated suggestive response: {item['suggestive_response'][:100]}...")
     
     return eval_list
 
@@ -200,8 +200,10 @@ def generate_steered_responses(eval_list, steering_vector):
         # Generate steered responses based on available prompts
         if not is_prompt_only:
             item["base_steered_response"] = steering_vector.get_steered_response(item["base_prompt"])
+            print(f"Generated base steered response: {item['base_steered_response'][:100]}...")
         
         item["suggestive_steered_response"] = steering_vector.get_steered_response(item["suggestive_prompt"])
+        print(f"Generated suggestive steered response: {item['suggestive_steered_response'][:100]}...")
     
     return eval_list
 
