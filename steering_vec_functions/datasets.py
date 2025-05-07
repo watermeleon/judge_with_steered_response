@@ -96,7 +96,7 @@ def format_caa_dataset(list_mwe_data: list[MWEData], tokenizer) -> list[tuple[st
 
 from transformers import AutoTokenizer
 
-def format_question(question: str, tokenizer=None, system_prompt="You are a helpful, honest assistant.") -> str:
+def format_question(question: str, tokenizer=None, system_prompt="You are a helpful assistant.") -> str:
     """
     Formats a single question using the tokenizer's chat template, ready for model inference.
     
