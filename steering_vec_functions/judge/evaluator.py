@@ -6,7 +6,7 @@ from tqdm import tqdm
 from typing import List, Dict, Any, Union, Callable
 
 
-from steering_vec_functions.steering_datasets import format_question
+from steering_vec_functions.datasets import format_question
 
 
 LLM_JUDGE_PROMPT = """

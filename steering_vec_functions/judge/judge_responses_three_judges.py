@@ -10,10 +10,10 @@ This script focuses on three specific evaluation scenarios:
 import os
 import sys
 
-# Move one directory up
-parent_dir = os.path.dirname(os.getcwd())
-# os.chdir(parent_dir)
-sys.path.append(parent_dir)
+# # Move one directory up
+# parent_dir = os.path.dirname(os.getcwd())
+# # os.chdir(parent_dir)
+# sys.path.append(parent_dir)
 
 
 import json
@@ -25,8 +25,8 @@ from tqdm import tqdm
 from openai import OpenAI
 
 # Import functions from judge_responses.py
-from notebooks.judge_responses import (
-    setup_environment,
+from steering_vec_functions.judge.judge_responses import (
+    # setup_environment,
     load_responses,
     initialize_openai_client,
     create_score_stats,
@@ -34,7 +34,7 @@ from notebooks.judge_responses import (
 )
 
 # Import the evaluation functions directly
-from notebooks.openai_judge_json import evaluate_sycophancy_pair, evaluate_sycophancy_single
+from steering_vec_functions.judge.openai_judge_json import evaluate_sycophancy_pair, evaluate_sycophancy_single
 
 
 def judge_single_responses(responses, client, model_slug):
@@ -456,7 +456,7 @@ def main():
         args.run_scenario3 = True
     
     # Setup
-    setup_environment()
+    # setup_environment()
     
     # Load responses
     settings, responses = load_responses(args.input_file)

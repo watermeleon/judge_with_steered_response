@@ -7,9 +7,9 @@ import os
 import sys
 
 # Move one directory up
-parent_dir = os.path.dirname(os.getcwd())
-# os.chdir(parent_dir)
-sys.path.append(parent_dir)
+# parent_dir = os.path.dirname(os.getcwd())
+# # os.chdir(parent_dir)
+# sys.path.append(parent_dir)
 
 # current_dir = os.getcwd()
 # print(f"Moved to parent directory: {current_dir}")
@@ -27,15 +27,7 @@ import steering_opt
 from steering_vec_functions.model_utils import get_model_and_tokenizer
 from steering_vec_functions.steering_vector import SteeringVector
 from steering_vec_functions.dataset_handler import DatasetHandler
-from steering_vec_functions.steering_datasets import format_question
-
-
-def setup_environment():
-    """Set up the environment by adding parent directory to path."""
-    parent_dir = os.path.dirname(os.getcwd())
-    os.chdir(parent_dir)
-    sys.path.append(parent_dir)
-    print(f"Moved to parent directory: {parent_dir}")
+from steering_vec_functions.datasets import format_question
 
 
 def load_model_and_data(args):
@@ -244,7 +236,7 @@ def prepare_prompt_only_list(prompts_list):
     return eval_list
 
 
-def save_responses_to_json(eval_list, args, mode="poems"):
+def save_responses_to_json(eval_list, args):
     """
     Save responses to a JSON file with experiment settings.
     
@@ -261,7 +253,7 @@ def save_responses_to_json(eval_list, args, mode="poems"):
     
     # Construct filename
     data_subset = args.feedback_subset if args.feedback_subset else "all"
-    filename = f"{args.results_folder}/responses_{mode}_{data_subset}_{timestamp}.json"
+    filename = os.path.join(args.results_folder, f"responses_{data_subset}_{timestamp}.json")
     
     # Prepare data to save
     output_data = {
@@ -333,14 +325,20 @@ def main():
                         help="Path to a file with a list of prompts (one per line)")
     
     # Output arguments
-    parser.add_argument("--results_folder", type=str, default="results/", help="Folder to save results")
+    parser.add_argument("--results_folder", type=str, default="results/responses/", help="Folder to save results")
     parser.add_argument("--do_steered", action="store_true", help="Whether to generate steered responses")
     parser.add_argument("--print_samples", action="store_true", help="Print the first 3 samples")
     
     args = parser.parse_args()
     
     # Setup
-    setup_environment()
+    # setup_environment()
+
+    res_path = Path(args.results_folder)
+    print(f"The full results path is: {res_path}")
+    # return
+    # .mkdir(parents=True, exist_ok=True)
+
     
     # Load model and tokenizer
     model, tokenizer = get_model_and_tokenizer(
@@ -410,7 +408,7 @@ def main():
         print_sample_responses(eval_list, num_samples=3, prompt_only=args.prompt_only)
     
     # Save responses to JSON
-    output_file = save_responses_to_json(eval_list, args, mode=mode)
+    output_file = save_responses_to_json(eval_list, args)
     
     print(f"Response generation complete. Saved to {output_file}")
 

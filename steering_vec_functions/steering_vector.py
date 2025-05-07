@@ -1,8 +1,11 @@
+import os
 import torch
 import steering_opt
 from typing import List, Dict, Any, Tuple
 
-from steering_vec_functions.steering_datasets import format_question
+from steering_vec_functions.datasets import format_question
+from steering_vec_functions.model_utils import save_steering_vector, load_steering_vector
+
 
 class SteeringVector:
     """Class to handle steering vector optimization and application."""
@@ -91,20 +94,18 @@ class SteeringVector:
         generated_tokens_only = generated_tokens[:, input_ids.shape[-1]:]
         return self.tokenizer.batch_decode(generated_tokens_only, skip_special_tokens=True)[0]
     
-    def save(self, filepath=None, model_name=None, layer_name=None):
+    def save(self, folder="./results/steering_vectors", model_name=None, layer_name=None):
         """Save the steering vector to a file."""
-        from steering_vec_functions.load_store_vectors import save_steering_vector
         
         if self.vector is None:
             raise ValueError("No steering vector to save. Call optimize() first.")
         # def save_steering_vector(steering_vector, model_name, layer_name, exp_name="", folder="./steering_vectors"):
 
         # return save_steering_vector(self.vector, filepath, model_name, layer_name or str(self.layer))
-        return save_steering_vector(self.vector, model_name, layer_name or str(self.layer))
+        return save_steering_vector(self.vector, model_name, layer_name or str(self.layer), folder=folder)
     
-    def load(self, folder="./steering_vectors", model_name=None, layer_name=None):
+    def load(self, folder="./results/steering_vectors", model_name=None, layer_name=None):
         """Load a steering vector from a file."""
-        from steering_vec_functions.load_store_vectors import load_steering_vector
         # def load_steering_vector(model_name, layer_name, exp_name="", folder="./steering_vectors"):
 
         self.vector = load_steering_vector(model_name, layer_name or str(self.layer), folder=folder)

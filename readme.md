@@ -2,6 +2,16 @@
 
 This repository contains a framework for optimizing and evaluating steering vectors for language models.
 
+
+### Newer functions:
+`python feedback_steering_clean.py --feedback_subset poems --short_poems --low_memory_load --num_samples 5 `
+
+For judges
+`python -m steering_vec_functions.judge.judge_responses_three_judges --input_file`
+
+
+
+# Previous overview:
 ## Overview
 
 The code is structured as follows:

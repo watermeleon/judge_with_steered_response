@@ -4,5 +4,7 @@
 *.pth
 *pkl
 *.pt
+*.csv
+*.png
 
 redundant/

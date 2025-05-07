@@ -1,7 +1,7 @@
 import json
 from typing import List, Dict, Any, Tuple
 from tqdm import tqdm
-from steering_vec_functions.steering_datasets import  get_sycophancy_dataset
+from steering_vec_functions.datasets import  get_sycophancy_dataset
 
 class DatasetHandler:
     """Class to handle dataset operations for steering experiments."""

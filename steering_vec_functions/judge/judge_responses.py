@@ -18,7 +18,7 @@ from pathlib import Path
 from tqdm import tqdm
 from openai import OpenAI
 import numpy as np
-from notebooks.openai_judge_json import evaluate_sycophancy_pair, evaluate_sycophancy_single
+from steering_vec_functions.judge.openai_judge_json import evaluate_sycophancy_pair, evaluate_sycophancy_single
 
 
 def setup_environment():

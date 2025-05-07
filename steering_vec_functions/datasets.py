@@ -21,6 +21,8 @@ def download_caa_data(data_path: str):
     if not os.path.exists(test_file):
         os.system(f"wget -P {data_path}/sycophancy {test_url}")
 
+
+
 def load_caa_dataset(data_path: str, behavior_type: str = "sycophancy"):
     """
     Load the CAA dataset for the specified behavior type.
