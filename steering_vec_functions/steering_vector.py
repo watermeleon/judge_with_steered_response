@@ -10,13 +10,14 @@ from steering_vec_functions.model_utils import save_steering_vector, load_steeri
 class SteeringVector:
     """Class to handle steering vector optimization and application."""
     
-    def __init__(self, model, tokenizer, layer=15, generation_length = 20):
+    def __init__(self, model, tokenizer, layer=15, generation_length = 20, temperature=0.0):
         self.model = model
         self.tokenizer = tokenizer
         self.layer = layer
         self.vector = None
         self.loss_info = None
         self.generation_length = generation_length 
+        self.temperature = temperature
     
     def optimize(self, prompt, incorrect_completion, correct_completion, 
                 max_iters=20, lr=0.1, debug=False) -> Tuple[torch.Tensor, Dict]:
@@ -72,7 +73,7 @@ class SteeringVector:
         formatted_question = format_question(question, self.tokenizer)
         input_ids = self.tokenizer(formatted_question, return_tensors='pt').input_ids
         
-        generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens)
+        generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens, do_sample=True, temperature=self.temperature)
         generated_tokens_only = generated_tokens[:, input_ids.shape[-1]:]
         
         return self.tokenizer.batch_decode(generated_tokens_only, skip_special_tokens=True)[0]
@@ -89,7 +90,7 @@ class SteeringVector:
         
         with steering_opt.hf_hooks_contextmanager(self.model, [steering_hook]): 
             input_ids = self.tokenizer(formatted_question, return_tensors='pt').input_ids
-            generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens)
+            generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens, do_sample=True, temperature=self.temperature)
         
         generated_tokens_only = generated_tokens[:, input_ids.shape[-1]:]
         return self.tokenizer.batch_decode(generated_tokens_only, skip_special_tokens=True)[0]

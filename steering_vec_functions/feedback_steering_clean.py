@@ -150,9 +150,9 @@ def generate_model_responses(eval_list, steering_vector):
     return eval_list
 
 
-def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, model_name, use_load_vector=True):
+def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, temperature, model_name, use_load_vector=True):
     """Create and optimize a steering vector."""
-    steering_vector = SteeringVector(model, tokenizer, layer=layer, generation_length=generation_length)
+    steering_vector = SteeringVector(model, tokenizer, layer=layer, generation_length=generation_length, temperature=temperature)
 
     if use_load_vector:
         steering_vector.load(model_name=model_name)
@@ -182,7 +182,8 @@ def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_le
         correct_completion=objective_response, 
         max_iters=num_iters, 
         lr=lr, 
-        debug=False
+        debug=False,
+        max_norm=4
     )
     print(f"Steering vector optimized with final loss: {loss_info['loss']:.4f}")
     steering_vector.save(model_name=model_name)
@@ -315,6 +316,7 @@ def main():
     parser.add_argument("--model_name", type=str, default="google/gemma-2-2b-it", help="Model name")
     parser.add_argument("--use_quantizer", action="store_true", help="Whether to use quantization")
     parser.add_argument("--low_memory_load", action="store_true", help="Whether to load model in low memory mode")
+    parser.add_argument("--temperature", type=float, default=0.7, help="Temperature for sampling")
     
     # Steering arguments
     parser.add_argument("--layer", type=int, default=10, help="Layer to apply steering vector")
@@ -399,7 +401,7 @@ def main():
     # if args.do_steered:
         # Create steering vector
     steering_vector = create_steering_vector(
-        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, model_name=args.model_name, use_load_vector=args.use_load_vector
+        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.temperature, model_name=args.model_name, use_load_vector=args.use_load_vector
     )
     print(f"The steering vector has norm {steering_vector.vector.norm():.4f}")
 
