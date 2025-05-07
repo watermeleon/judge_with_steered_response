@@ -150,7 +150,7 @@ def generate_model_responses(eval_list, steering_vector):
     return eval_list
 
 
-def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, temperature, model_name, use_load_vector=True):
+def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, temperature, model_name, use_load_vector=True, max_norm=None):
     """Create and optimize a steering vector."""
     steering_vector = SteeringVector(model, tokenizer, layer=layer, generation_length=generation_length, temperature=temperature)
 
@@ -183,7 +183,7 @@ def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_le
         max_iters=num_iters, 
         lr=lr, 
         debug=False,
-        max_norm=4
+        max_norm=max_norm
     )
     print(f"Steering vector optimized with final loss: {loss_info['loss']:.4f}")
     steering_vector.save(model_name=model_name)
@@ -323,6 +323,7 @@ def main():
     parser.add_argument("--num_iters", type=int, default=20, help="Number of iterations for steering optimization")
     parser.add_argument("--lr", type=float, default=0.01, help="Learning rate for steering optimization")
     parser.add_argument("--generation_length", type=int, default=50, help="Generation length for responses")
+    parser.add_argument("--max_norm", type=float, default=4, help="Max norm for steering vector")
     
     # Mode arguments
     parser.add_argument("--prompt_only", action="store_true", 
@@ -337,15 +338,8 @@ def main():
     parser.add_argument("--print_samples", action="store_true", help="Print the first 3 samples")
     
     args = parser.parse_args()
-    
-    # Setup
-    # setup_environment()
 
-    res_path = Path(args.results_folder)
-    print(f"The full results path is: {res_path}")
-    # return
-    # .mkdir(parents=True, exist_ok=True)
-
+    print("Arguments:", args)
     
     # Load model and tokenizer
     model, tokenizer = get_model_and_tokenizer(
@@ -401,7 +395,7 @@ def main():
     # if args.do_steered:
         # Create steering vector
     steering_vector = create_steering_vector(
-        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.temperature, model_name=args.model_name, use_load_vector=args.use_load_vector
+        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.temperature, model_name=args.model_name, use_load_vector=args.use_load_vector, max_norm=args.max_norm
     )
     print(f"The steering vector has norm {steering_vector.vector.norm():.4f}")
 
