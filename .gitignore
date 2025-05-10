@@ -8,3 +8,4 @@
 *.png
 
 redundant/
+!*manipulation_dataset.json
