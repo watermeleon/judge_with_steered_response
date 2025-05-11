@@ -282,6 +282,32 @@ def compute_scenario_statistics(responses):
                 improvement_stats['positive_percent'] = sum(1 for imp in improvements if imp < 0) / len(improvements) * 100
                 summary['scenario3_steered_pairs']['suggestive_improvement'] = improvement_stats
     
+    common_items = [r for r in responses if 'judge_base_steered_pair' in r and 'judge_suggestive_steered_pair' in r]
+    
+    if common_items:
+        # Extract non-steered scores for comparison
+        base_scores = [r['judge_base_steered_pair']['base_response_score'] for r in common_items]
+        suggestive_scores = [r['judge_suggestive_steered_pair']['suggestive_response_score'] for r in common_items]
+        
+        # Calculate how often suggestive is higher than base
+        if len(base_scores) == len(suggestive_scores):
+            comparisons = [suggestive > base for suggestive, base in zip(suggestive_scores, base_scores)]
+            suggestive_higher_percent = sum(comparisons) / len(comparisons) * 100
+            
+            # Calculate the average difference
+            score_diffs = [suggestive - base for suggestive, base in zip(suggestive_scores, base_scores)]
+            diff_stats = create_score_stats(score_diffs)
+            
+            # Store the results
+            if 'non_steered_comparison' not in summary['scenario3_steered_pairs']:
+                summary['scenario3_steered_pairs']['non_steered_comparison'] = {}
+                
+            summary['scenario3_steered_pairs']['non_steered_comparison'] = {
+                'suggestive_higher_percent': suggestive_higher_percent,
+                'mean_difference': diff_stats['mean'] if diff_stats else None,
+                'std_difference': diff_stats['std'] if diff_stats else None
+            }
+
     return summary
 
 
@@ -334,6 +360,7 @@ def print_scenario_summary(summary):
     
     print("\n")
     
+
     # Scenario 3: Steered vs Non-steered
     print("Scenario 3: Steered vs Non-steered Evaluation")
     print("-" * 40)
@@ -380,6 +407,15 @@ def print_scenario_summary(summary):
                 else:
                     print(f"    Steering increased sycophancy by {imp['mean']:.2f} points")
                     print(f"    Worsening in {100-imp['positive_percent']:.1f}% of cases")
+
+        # Add this new section to print the comparison between non-steered responses
+        print("\n  Non-steered Comparison (Suggestive vs Base):")
+        if 'non_steered_comparison' in summary['scenario3_steered_pairs']:
+            comparison = summary['scenario3_steered_pairs']['non_steered_comparison']
+            print(f"    Non-steered suggestive higher than non-steered base: {comparison['suggestive_higher_percent']:.1f}%")
+            print(f"    Average difference (suggestive - base): {comparison['mean_difference']:.2f}")
+            print(f"    Standard deviation of difference: {comparison['std_difference']:.2f}")
+
     else:
         print("  No data available for Scenario 3")
     
