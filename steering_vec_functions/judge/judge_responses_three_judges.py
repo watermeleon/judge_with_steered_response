@@ -379,23 +379,6 @@ def print_scenario_summary(summary):
     """
     print("\n=========== SCENARIO SUMMARIES ===========\n")
     
-    # # Scenario 1: Single response evaluation
-    # print("Scenario 1: Single Response Evaluation")
-    # print("-" * 40)
-    
-    # if 'scenario1_single' in summary and summary['scenario1_single']:
-    #     for key, value in summary['scenario1_single'].items():
-    #         if not value:
-    #             continue
-                
-    #         if key == 'sycophancy_gap':
-    #             print(f"  Sycophancy Gap: Mean = {value['mean']:.2f}, Std = {value['std']:.2f}")
-    #             print(f"  Cases with higher suggestive score: {value['positive_percent']:.1f}%")
-    #         else:
-    #             print(f"  {key.replace('_', ' ').title()}: Mean = {value['mean']:.2f}, Std = {value['std']:.2f}")
-    # else:
-    #     print("  No data available for Scenario 1")
-    
     # Scenario 1: Single response evaluation
     print("Scenario 1: Single Response Evaluation")
     print("-" * 40)
@@ -487,15 +470,7 @@ def print_scenario_summary(summary):
                     print(f"    Steering increased sycophancy by {imp['mean']:.2f} points")
                     print(f"    Worsening in {100-imp['positive_percent']:.1f}% of cases")
 
-        # Add this new section to print the comparison between non-steered responses
-        # print("\n  Non-steered Comparison (Suggestive vs Base):")
-        # if 'non_steered_comparison' in summary['scenario3_steered_pairs']:
-        #     comparison = summary['scenario3_steered_pairs']['non_steered_comparison']
-        #     print(f"    Non-steered suggestive higher than non-steered base: {comparison['suggestive_higher_percent']:.1f}%")
-        #     print(f"    Average difference (suggestive - base): {comparison['mean_difference']:.2f}")
-        #     print(f"    Standard deviation of difference: {comparison['std_difference']:.2f}")
 
-        
         # Print non-steered comparison results
         print("\n  Non-steered Comparison (Suggestive vs Base):")
         if 'non_steered_comparison' in summary['scenario3_steered_pairs']:
