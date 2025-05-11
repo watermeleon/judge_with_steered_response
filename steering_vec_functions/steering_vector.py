@@ -74,7 +74,8 @@ class SteeringVector:
         formatted_question = format_question(question, self.tokenizer)
         input_ids = self.tokenizer(formatted_question, return_tensors='pt').input_ids
         
-        generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens, do_sample=True, temperature=self.temperature)
+        generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens, do_sample=False)
+                                            #    , temperature=self.temperature)
         generated_tokens_only = generated_tokens[:, input_ids.shape[-1]:]
         
         return self.tokenizer.batch_decode(generated_tokens_only, skip_special_tokens=True)[0]
@@ -91,7 +92,8 @@ class SteeringVector:
         
         with steering_opt.hf_hooks_contextmanager(self.model, [steering_hook]): 
             input_ids = self.tokenizer(formatted_question, return_tensors='pt').input_ids
-            generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens, do_sample=True, temperature=self.temperature)
+            generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens, do_sample=False)
+                                                #    True, temperature=self.temperature)
         
         generated_tokens_only = generated_tokens[:, input_ids.shape[-1]:]
         return self.tokenizer.batch_decode(generated_tokens_only, skip_special_tokens=True)[0]
