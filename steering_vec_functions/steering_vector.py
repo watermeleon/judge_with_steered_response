@@ -40,6 +40,8 @@ class SteeringVector:
             lr=lr,
             debug=debug,
             max_norm=max_norm,
+            # target_loss = 3
+
         )
         return self.vector, self.loss_info
     

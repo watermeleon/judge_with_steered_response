@@ -542,7 +542,7 @@ def main():
     parser.add_argument("--run_all", action="store_true", help="Run all three scenarios")
     
     # Output arguments
-    parser.add_argument("--results_folder", type=str, default="results/", help="Folder to save results")
+    parser.add_argument("--results_folder", type=str, default="results/judge_results/", help="Folder to save results")
     
     args = parser.parse_args()
     

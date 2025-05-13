@@ -459,11 +459,16 @@ def save_results(responses, summary, input_file, args):
     input_base = os.path.basename(input_file)
     input_name = os.path.splitext(input_base)[0]
     
-    # Create timestamp for unique filename
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Construct base filename
+    base_filename = os.path.join(args.results_folder, f"judge_{input_name}_v")
     
-    # Construct filename
-    filename = f"{args.results_folder}/judge_{input_name}_{timestamp}.json"
+    # Determine the next version number
+    version = 1
+    while os.path.exists(f"{base_filename}{version}.json"):
+        version += 1
+    
+    # Final filename with version
+    filename = f"{base_filename}{version}.json"
     
     # Prepare data to save
     output_data = {

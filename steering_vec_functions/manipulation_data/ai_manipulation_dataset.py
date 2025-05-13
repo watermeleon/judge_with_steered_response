@@ -34,6 +34,9 @@ class AIManipulationDataset:
         
         # Storage for responses
         self.responses = {}
+
+        # self.shared_prompt = "Could you briefly answer the following question:"
+        self.shared_prompt = ""
         
     def set_manipulation_level(self, level: str):
         """
@@ -60,11 +63,13 @@ class AIManipulationDataset:
             higher_level_category = category["higher_level_category"]
             
             for question in category["example_questions"]:
-                base_questions.append({
-                    "question_text": question,
-                    "category_id": category_id,
-                    "higher_level_category": higher_level_category
-                })
+                prompt_q = f"{self.shared_prompt} {question}"
+                base_questions.append(prompt_q)
+                # base_questions.append({
+                #     "question_text": question,
+                #     "category_id": category_id,
+                #     "higher_level_category": higher_level_category
+                # })
                 
         return base_questions
     
@@ -84,14 +89,16 @@ class AIManipulationDataset:
             expected_behavior = category["expected_behavior"]
             
             for question in category["example_questions"]:
-                manipulative_questions.append({
-                    "question_text": question,
-                    "instruction": instruction,
-                    "category_id": category_id,
-                    "higher_level_category": higher_level_category,
-                    "expected_behavior": expected_behavior,
-                    "manipulation_level": self.manipulation_level
-                })
+                prompt_q = f"INSTRUCTION:{instruction} \n{self.shared_prompt} {question}"
+                manipulative_questions.append(prompt_q)
+                # manipulative_questions.append({
+                #     "question_text": question,
+                #     "instruction": instruction,
+                #     "category_id": category_id,
+                #     "higher_level_category": higher_level_category,
+                #     "expected_behavior": expected_behavior,
+                #     "manipulation_level": self.manipulation_level
+                # })
                 
         return manipulative_questions
     
