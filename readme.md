@@ -1,77 +1,74 @@
 # Steering Vector Framework
 
-This repository contains a framework for optimizing and evaluating steering vectors for language models.
+This repository contains a framework for optimizing and evaluating steering vectors for language models to aid LLM-judges in detecting manipulative responses.
 
 
-### Newer functions:
-<!-- `python feedback_steering_clean.py --feedback_subset poems --short_poems --low_memory_load --num_samples 5 ` -->
-`python -m steering_vec_functions.feedback_steering_clean --feedback_subset poems --short_poems --low_memory_load --num_samples 2 --use_load_vector`
+# Minimal Setup
 
-For judges
-`python -m steering_vec_functions.judge.judge_responses_three_judges --input_file`
+This project provides tools for generating and evaluating AI model responses using steering vectors, with specific focus on detecting manipulation and sycophancy behaviors.
 
+## Prerequisites
 
-
-# Previous overview:
-## Overview
-
-The code is structured as follows:
-
-- `main.py`: Main script to run the steering vector optimization and evaluation
-- `steering_vector.py`: Class to handle steering vector optimization and application
-- `dataset_handler.py`: Class to handle dataset operations
-- `evaluator.py`: Classes for evaluating model responses
-- `model_utils.py`: Utilities for loading models and tokenizers
-
-## Usage
-
-To run the framework, use the following command:
-
-```bash
-python main.py --model_name "google/gemma-2-2b-it" --exp_name "my_experiment" --num_questions 10
-```
-
-### Command Line Arguments
-
-- `--model_name`: Name of the model to use (default: "google/gemma-2-2b-it")
-- `--exp_name`: Experiment name for saving results (default: "steering_experiment")
-- `--use_quantizer`: Use quantizer for model loading (flag)
-- `--layer`: Layer to apply steering (default: 15)
-- `--num_iters`: Number of iterations for optimization (default: 20)
-- `--lr`: Learning rate for optimization (default: 0.1)
-- `--debug_steer`: Enable debug mode for steering (flag)
-- `--num_questions`: Number of questions to evaluate (default: 5)
-- `--results_folder`: Folder to save results (default: "results/")
-- `--data_path`: Path to dataset files (default: "./data/")
-
-## Results
-
-The framework generates the following results:
-
-1. Optimized steering vector saved to disk
-2. Evaluation results in CSV format
-3. Detailed evaluation results in JSON format
-
-## Example Workflow
-
-1. The framework loads the specified model and tokenizer
-2. It optimizes a steering vector using a fixed example
-3. It loads the sycophancy dataset and extracts suggestive question pairs
-4. It generates answers using both the normal and steered model
-5. It evaluates the answers using an LLM judge
-6. It saves the results to disk
-
-## Requirements
-
+- Python 3.8 or higher
 - PyTorch
 - Transformers
-- tqdm
-- pandas
+- OpenAI API key (for response evaluation)
 
-## Extending the Framework
+## Installation
 
-To extend the framework with new datasets or evaluation methods:
+```bash
+# Clone the repository
+git clone [repository-url]
+cd [repository-name]
 
-1. Modify the `DatasetHandler` class to support your new dataset
-2. Create new evaluation logic in the `ResultsEvaluator` class
-3. Update the `main.py` script to use your new components
+# Install required dependencies
+pip install -r requirements.txt
+```
+
+## Basic Usage
+
+The workflow consists of two main steps: generating responses with steering vectors and evaluating those responses.
+
+### Step 1: Generate Responses
+
+Generate steered responses using the following command:
+
+```bash
+python -u -m steering_vec_functions.feedback_steering_clean \
+    --data_set manipulation \
+    --num_samples 20 \
+    --num_iters 20 \
+    --lr 0.1 \
+    --low_memory_load \
+    --generation_length 100 \
+    --use_load_vector
+```
+
+This will create a JSON file containing the generated responses in the `results/responses/` directory.
+
+### Step 2: Evaluate Responses
+
+Evaluate the generated responses using:
+
+```bash
+python -m steering_vec_functions.judge.judge_responses_three_judges \
+    --input_file results/responses/responses_all_20250513_v1.json \
+    --openai_model gpt-4.1-nano \
+    --data_type manipulation
+```
+
+This will analyze the responses and save evaluation results in the `results/judge_results/` directory.
+
+## Configuration Options
+
+The response generation script supports various parameters including:
+- Different datasets (`manipulation`, `sycophancy`, `feedback`)
+- Model configurations
+- Steering vector parameters
+- Output format options
+
+The evaluation script provides multiple evaluation scenarios that can be selected individually or run together.
+
+## Output
+
+Results are saved as JSON files containing both the generated responses and their evaluation metrics, including manipulation/sycophancy scores and correctness assessments.
