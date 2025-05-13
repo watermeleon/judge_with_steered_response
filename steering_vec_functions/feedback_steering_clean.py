@@ -359,7 +359,6 @@ def main():
     
     # Output arguments
     parser.add_argument("--results_folder", type=str, default="results/responses/", help="Folder to save results")
-    parser.add_argument("--do_steered", action="store_true", help="Whether to generate steered responses")
     parser.add_argument("--use_load_vector", action="store_true", help="Whether to load the steering vector")
     parser.add_argument("--print_samples", action="store_true", help="Print the first 3 samples")
     
@@ -418,19 +417,15 @@ def main():
 
             # Get questions for testing
             base_questions = dataset_handler.get_base_questions()
-            manipulative_questions = dataset_handler.get_manipulative_questions()  # Default: subtle
+            manipulative_questions, full_data = dataset_handler.get_manipulative_questions()  # Default: subtle
             
-            # print(manipulative_questions
-            # )
-            # poem_dict["base_prompt"] = base_prompt_template.format(text=poem["base"]["text"])
-            # poem_dict["suggestive_prompt"] = suggestive_prompt_template.format(text=poem["base"]["text"])
-            # poem_dict["poem"] = poem["base"]["text"]
             eval_list = []
             for i, base_q in enumerate(base_questions):
                 # Create a dictionary for each question
                 question_dict = {
                     "base_prompt": base_q,
-                    "suggestive_prompt": manipulative_questions[i]
+                    "suggestive_prompt": manipulative_questions[i],
+                    "full_data": full_data[i]
                 }
                 eval_list.append(question_dict)
 
@@ -441,10 +436,7 @@ def main():
             print(f"Using subset of {len(eval_list)} samples")
     
     print(eval_list[0])
-    # return
-    # Create and apply steering vector if requested
-    # if args.do_steered:
-        # Create steering vector
+
     steering_vector = create_steering_vector(
         model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.temperature, model_name=args.model_name, 
         use_load_vector=args.use_load_vector, max_norm=args.max_norm, dataset=eval_list
@@ -458,10 +450,6 @@ def main():
 
     # Generate responses
     eval_list = generate_model_responses(eval_list, steering_vector)
-
-
-
-
     
     # Print sample responses if requested
     if args.print_samples:

@@ -57,15 +57,16 @@ class AIManipulationDataset:
             A list of dictionaries containing question text and metadata
         """
         base_questions = []
-        
+
         for category in self.data["manipulation_categories"]:
-            category_id = category["category_id"]
-            higher_level_category = category["higher_level_category"]
+            # category_id = category["category_id"]
+            # higher_level_category = category["higher_level_category"]
             
             for question in category["example_questions"]:
                 prompt_q = f"{self.shared_prompt} {question}"
                 base_questions.append(prompt_q)
-                # base_questions.append({
+
+                # full_data.append({
                 #     "question_text": question,
                 #     "category_id": category_id,
                 #     "higher_level_category": higher_level_category
@@ -81,6 +82,8 @@ class AIManipulationDataset:
             A list of dictionaries containing question text, instruction, and metadata
         """
         manipulative_questions = []
+        full_data = []
+
         
         for category in self.data["manipulation_categories"]:
             category_id = category["category_id"]
@@ -91,6 +94,7 @@ class AIManipulationDataset:
             for question in category["example_questions"]:
                 prompt_q = f"INSTRUCTION:{instruction} \n{self.shared_prompt} {question}"
                 manipulative_questions.append(prompt_q)
+
                 # manipulative_questions.append({
                 #     "question_text": question,
                 #     "instruction": instruction,
@@ -99,8 +103,17 @@ class AIManipulationDataset:
                 #     "expected_behavior": expected_behavior,
                 #     "manipulation_level": self.manipulation_level
                 # })
+
+                full_data.append({
+                    "question_text": question,
+                    "instruction": instruction,
+                    "category_id": category_id,
+                    "higher_level_category": higher_level_category,
+                    "expected_behavior": expected_behavior,
+                    "manipulation_level": self.manipulation_level
+                })
                 
-        return manipulative_questions
+        return manipulative_questions, full_data
     
     def store_response(self, question_text: str, 
                        is_manipulative: bool, 

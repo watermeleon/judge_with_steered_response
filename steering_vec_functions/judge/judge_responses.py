@@ -8,17 +8,13 @@ import sys
 
 # Move one directory up
 parent_dir = os.path.dirname(os.getcwd())
-# os.chdir(parent_dir)
 sys.path.append(parent_dir)
 
 import json
-import argparse
-import datetime
 from pathlib import Path
-from tqdm import tqdm
-from openai import OpenAI
 import numpy as np
-from steering_vec_functions.judge.openai_judge_json import evaluate_sycophancy_pair, evaluate_sycophancy_single
+
+from openai import OpenAI
 
 
 def setup_environment():
