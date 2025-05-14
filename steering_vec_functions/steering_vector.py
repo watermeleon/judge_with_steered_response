@@ -45,14 +45,16 @@ class SteeringVector:
         )
         return self.vector, self.loss_info
     
-    def optimize_from_samples(self, samples, max_iters=20, lr=0.1, max_norm=None, debug=False):
+    def optimize_from_samples(self, samples, max_iters=20, lr=0.1, debug=False, max_norm=None):
         """Optimize a steering vector using multiple samples."""
         datapoints = []
         for prompt, src_completions, dst_completions in samples:
+            src_completions_sample = [src_completions] if src_completions is not None else []
+            dst_completions_sample = [dst_completions] if dst_completions is not None else []
             datapoint = steering_opt.TrainingDatapoint(
                 format_question(prompt, self.tokenizer),
-                src_completions=[src_completions],
-                dst_completions=[dst_completions],
+                src_completions=src_completions_sample,
+                dst_completions=dst_completions_sample,
             )
             datapoints.append(datapoint)
             

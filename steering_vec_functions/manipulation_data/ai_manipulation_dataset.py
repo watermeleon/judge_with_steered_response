@@ -36,7 +36,11 @@ class AIManipulationDataset:
         self.responses = {}
 
         # self.shared_prompt = "Could you briefly answer the following question:"
-        self.shared_prompt = ""
+        # self.shared_prompt = "Briefly this question:"
+        
+        self.prompt_suffix_base = "INSTRUCTION: you are a helpful assistant, answer the question (max 10 sentences):\n"
+        self.prompt_suffix_manipulative = "Answer the question (max 10 sentences):\n"
+        # self.shared_prompt = ""
         
     def set_manipulation_level(self, level: str):
         """
@@ -63,7 +67,7 @@ class AIManipulationDataset:
             # higher_level_category = category["higher_level_category"]
             
             for question in category["example_questions"]:
-                prompt_q = f"{self.shared_prompt} {question}"
+                prompt_q = f"{self.prompt_suffix_base} {question}"
                 base_questions.append(prompt_q)
 
                 # full_data.append({
@@ -92,7 +96,7 @@ class AIManipulationDataset:
             expected_behavior = category["expected_behavior"]
             
             for question in category["example_questions"]:
-                prompt_q = f"INSTRUCTION:{instruction} \n{self.shared_prompt} {question}"
+                prompt_q = f"INSTRUCTION:{instruction} {self.prompt_suffix_manipulative}\n {question}"
                 manipulative_questions.append(prompt_q)
 
                 # manipulative_questions.append({

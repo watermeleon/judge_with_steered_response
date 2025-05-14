@@ -162,52 +162,182 @@ def generate_model_responses(eval_list, steering_vector):
     return eval_list
 
 
-def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, temperature, model_name, use_load_vector=True, max_norm=None, dataset=None):
-    """Create and optimize a steering vector."""
-    steering_vector = SteeringVector(model, tokenizer, layer=layer, generation_length=generation_length, temperature=temperature)
+# def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, temperature, model_name, use_load_vector=True, max_norm=None, dataset=None, multi_sample=False):
+#     """Create and optimize a steering vector."""
+#     steering_vector = SteeringVector(model, tokenizer, layer=layer, generation_length=generation_length, temperature=temperature)
 
+#     if use_load_vector:
+#         steering_vector.load(model_name=model_name)
+#         return steering_vector
+
+
+#     if dataset is not None:    
+#         eval_list = dataset
+#         prompt_idx = -3   # is third to last: "Should I use Windows or Mac for professional work?",
+#         use_indices = [-3, 11, ]
+#         pos_prompt = eval_list[prompt_idx]["suggestive_prompt"]
+#         objective_prompt = eval_list[prompt_idx]["base_prompt"]
+
+#     else:
+#         # Use this stored Example poem for steering
+#         steering_poem = "In the velvet night I find solace,\nWrapped in shadow's dark embrace. No prying eyes can see my face,\nNo harsh light to give me chase. Behind closed doors I live alone,\nCurtains drawn, candle lit"
+#         pos_prompt = SUGGESTIVE_PROMPT_TEMPLATE.format(text=steering_poem)
+#         objective_prompt = BASE_PROMPT_TEMPLATE.format(text=steering_poem)
+    
+
+#     # Get responses
+#     objective_response = steering_vector.get_response(objective_prompt, max_tokens=50)
+#     pos_response = steering_vector.get_response(pos_prompt, max_tokens=50)
+
+#     print(f"Positive prompt: {pos_prompt}")
+#     print(f"Positive response: {pos_response}")
+
+#     print(f"Objective prompt: {objective_prompt}")
+#     print(f"Objective response: {objective_response}")
+
+#     pos_response = None
+#     print(f" - Using only correct response for optimization")
+    
+#     # Optimize the steering vector
+#     formatted_question = format_question(pos_prompt, tokenizer)
+#     vector, loss_info = steering_vector.optimize(
+#         prompt=formatted_question, 
+#         incorrect_completion=pos_response, 
+#         correct_completion=objective_response, 
+#         max_iters=num_iters, 
+#         lr=lr, 
+#         debug=False,
+#         max_norm=max_norm
+#     )
+
+#         #     optimization_samples = [
+#         #     (prompt1, incorrect1, correct1),
+#         #     (prompt2, incorrect2, correct2)
+#         # ]
+#         # vector, loss_info = steering_vector.optimize_from_samples(
+#         #     optimization_samples,
+#         #     max_iters=args.num_iters,
+#         #     lr=args.lr,
+#         #     max_norm=args.max_norm,
+          
+#     print(f"Steering vector optimized with final loss: {loss_info['loss']:.4f}")
+#     steering_vector.save(model_name=model_name)
+
+#     return steering_vector
+
+def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, generation_length_optimization=50, temperature=0.1, 
+                         model_name=None, use_load_vector=True, max_norm=None, dataset=None, 
+                         multi_sample=True, correct_only=True):
+    """Create and optimize a steering vector.
+    
+    Args:
+        model: The model to use
+        tokenizer: The tokenizer to use
+        layer: The layer to apply steering to
+        num_iters: Number of optimization iterations
+        lr: Learning rate
+        generation_length: Length of generated text
+        temperature: Temperature for generation
+        model_name: Name of the model for saving/loading
+        use_load_vector: Whether to load an existing vector
+        max_norm: Maximum norm for the steering vector
+        dataset: Dataset to use for prompts
+        multi_sample: Whether to use multiple samples for optimization
+        correct_only: Whether to only use correct responses (set incorrect to None)
+    """
+    steering_vector = SteeringVector(model, tokenizer, layer=layer, 
+                                   generation_length=generation_length, 
+                                   temperature=temperature)
+    
     if use_load_vector:
         steering_vector.load(model_name=model_name)
         return steering_vector
-
-
-    if dataset is not None:    
+    
+    if multi_sample and dataset is not None:
+        # Use multiple samples from dataset
         eval_list = dataset
-        prompt_idx = -3   # is third to last: "Should I use Windows or Mac for professional work?",
-        pos_prompt = eval_list[prompt_idx]["suggestive_prompt"]
-        objective_prompt = eval_list[prompt_idx]["base_prompt"]
-
+        # use_indices = [-7, 34]  # You can modify these indices as needed
+        use_indices = [0, 34]  # You can modify these indices as needed
+        optimization_samples = []
+        
+        for idx in use_indices:
+            if idx < len(eval_list):
+                pos_prompt = eval_list[idx]["suggestive_prompt"]
+                objective_prompt = eval_list[idx]["base_prompt"]
+                
+                # Get responses
+                objective_response = steering_vector.get_response(objective_prompt, max_tokens=generation_length_optimization)
+                pos_response = steering_vector.get_response(pos_prompt, max_tokens=generation_length_optimization)
+                
+                print(f"\n--- Sample {idx} ---")
+                print(f"# Positive prompt: {pos_prompt}")
+                print(f"# Positive response: {pos_response}")
+                print(f"# Objective prompt: {objective_prompt}")
+                print(f"# Objective response: {objective_response}")
+                
+                # Apply correct_only setting
+                if correct_only:
+                    pos_response = None
+                    print(" - Using only correct response for optimization")
+                
+                # Format the question
+                formatted_question = format_question(pos_prompt, tokenizer)
+                
+                # Add to optimization samples
+                optimization_samples.append((formatted_question, pos_response, objective_response))
+        
+        # Optimize using multiple samples
+        vector, loss_info = steering_vector.optimize_from_samples(
+            optimization_samples,
+            max_iters=num_iters,
+            lr=lr,
+            max_norm=max_norm,
+            debug=False
+        )
+        
     else:
-        # Use this stored Example poem for steering
-        steering_poem = "In the velvet night I find solace,\nWrapped in shadow's dark embrace. No prying eyes can see my face,\nNo harsh light to give me chase. Behind closed doors I live alone,\nCurtains drawn, candle lit"
-        pos_prompt = SUGGESTIVE_PROMPT_TEMPLATE.format(text=steering_poem)
-        objective_prompt = BASE_PROMPT_TEMPLATE.format(text=steering_poem)
+        # Single sample optimization (original behavior)
+        if dataset is not None:    
+            eval_list = dataset
+            prompt_idx = 34   # Third to last
+            # prompt_idx = -7   # Third to last
+            pos_prompt = eval_list[prompt_idx]["suggestive_prompt"]
+            objective_prompt = eval_list[prompt_idx]["base_prompt"]
+        else:
+            # Use stored Example poem for steering
+            steering_poem = "In the velvet night I find solace,\nWrapped in shadow's dark embrace. No prying eyes can see my face,\nNo harsh light to give me chase. Behind closed doors I live alone,\nCurtains drawn, candle lit"
+            pos_prompt = SUGGESTIVE_PROMPT_TEMPLATE.format(text=steering_poem)
+            objective_prompt = BASE_PROMPT_TEMPLATE.format(text=steering_poem)
+       
+        # Get responses
+        objective_response = steering_vector.get_response(objective_prompt, max_tokens=generation_length_optimization)
+        pos_response = steering_vector.get_response(pos_prompt, max_tokens=generation_length_optimization)
+        
+        print(f"\n--- Sample {prompt_idx} ---")
+        print(f"# Positive prompt: {pos_prompt}")
+        print(f"# Positive response: {pos_response}")
+        print(f"# Objective prompt: {objective_prompt}")
+        print(f"# Objective response: {objective_response}")
+        
+        # Apply correct_only setting
+        if correct_only:
+            pos_response = None
+            print(" - Using only correct response for optimization")
+       
+        # Optimize the steering vector
+        formatted_question = format_question(pos_prompt, tokenizer)
+        vector, loss_info = steering_vector.optimize(
+            prompt=formatted_question,
+            incorrect_completion=pos_response,
+            correct_completion=objective_response,
+            max_iters=num_iters,
+            lr=lr,
+            debug=False,
+            max_norm=max_norm
+        )
     
-
-    # Get responses
-    objective_response = steering_vector.get_response(objective_prompt, max_tokens=50)
-    pos_response = steering_vector.get_response(pos_prompt, max_tokens=50)
-
-    print(f"Positive prompt response: {pos_response}")
-    print(f"Objective response: {objective_response}")
-
-    pos_response = None
-    print(f" - Using only correct response for optimization")
-    
-    # Optimize the steering vector
-    formatted_question = format_question(pos_prompt, tokenizer)
-    vector, loss_info = steering_vector.optimize(
-        prompt=formatted_question, 
-        incorrect_completion=pos_response, 
-        correct_completion=objective_response, 
-        max_iters=num_iters, 
-        lr=lr, 
-        debug=False,
-        max_norm=max_norm
-    )
     print(f"Steering vector optimized with final loss: {loss_info['loss']:.4f}")
     steering_vector.save(model_name=model_name)
-
     return steering_vector
 
 
@@ -349,7 +479,10 @@ def main():
     parser.add_argument("--num_iters", type=int, default=20, help="Number of iterations for steering optimization")
     parser.add_argument("--lr", type=float, default=0.01, help="Learning rate for steering optimization")
     parser.add_argument("--generation_length", type=int, default=50, help="Generation length for responses")
+    parser.add_argument("--generation_length_optimization", type=int, default=50, help="Generation length for responses")
     parser.add_argument("--max_norm", type=float, default=None, help="Max norm for steering vector. If None, no max norm is applied.")
+    parser.add_argument("--multi_sample", action="store_true", help="Whether to use multiple samples for optimization")
+    
     
     # Mode arguments
     parser.add_argument("--prompt_only", action="store_true", 
@@ -430,19 +563,21 @@ def main():
                 eval_list.append(question_dict)
 
         
-        # Take subset if specified
-        if args.num_samples < len(eval_list):
-            eval_list = eval_list[:args.num_samples]
-            print(f"Using subset of {len(eval_list)} samples")
+
     
     print(eval_list[0])
 
-    steering_vector = create_steering_vector(
-        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.temperature, model_name=args.model_name, 
-        use_load_vector=args.use_load_vector, max_norm=args.max_norm, dataset=eval_list
+    steering_vector = create_steering_vector(   
+        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.generation_length_optimization, args.temperature, model_name=args.model_name, 
+        use_load_vector=args.use_load_vector, max_norm=args.max_norm, dataset=eval_list, multi_sample=args.multi_sample
     )
     print(f"The steering vector has norm {steering_vector.vector.norm():.4f}")
 
+
+    # Take subset if specified
+    if args.num_samples < len(eval_list):
+        eval_list = eval_list[:args.num_samples]
+        print(f"Using subset of {len(eval_list)} samples")
 
     # Generate steered responses
     eval_list = generate_steered_responses(eval_list, steering_vector)
