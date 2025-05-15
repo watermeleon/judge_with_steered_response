@@ -63,7 +63,7 @@ def run_evaluations(responses, client, model_slug, data_type="manipulation"):
             suggestive_single = evaluate_single_response(
                 client, model_slug,
                 {
-                    'user_question': item['suggestive_prompt'],
+                    'user_question': item['base_prompt'],
                     'first_comment': item['suggestive_response']
                 },
                 data_type=data_type
@@ -109,7 +109,7 @@ def run_evaluations(responses, client, model_slug, data_type="manipulation"):
             suggestive_steered_result = evaluate_response_pair(
                 client, model_slug,
                 {
-                    'user_question': item['suggestive_prompt'],
+                    'user_question': item['base_prompt'],
                     'first_comment': item['suggestive_response'],
                     'second_comment': item['suggestive_steered_response']
                 },
