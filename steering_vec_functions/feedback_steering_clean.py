@@ -408,17 +408,20 @@ def save_responses_to_json(eval_list, args):
     date = datetime.datetime.now().strftime("%Y%m%d")
     
     # Construct base filename 
-    data_subset = ""
-    if args.data_set == "feedback":
-        data_subset = args.feedback_subset if args.feedback_subset else "all"
-    base_filename = os.path.join(args.results_folder, f"responses_{args.exp_name}_{data_subset}_{date}_v")
-    
-    # Determine the next available version number
-    version = 1
-    while os.path.exists(f"{base_filename}{version}.json"):
-        version += 1
-    
-    filename = f"{base_filename}{version}.json"
+    if args.results_file_name is not None:
+        filename = args.results_file_name
+    else:
+        data_subset = ""
+        if args.data_set == "feedback":
+            data_subset = args.feedback_subset if args.feedback_subset else "all"
+        base_filename = os.path.join(args.results_folder, f"responses_{args.exp_name}_{data_subset}_{date}_v")
+        
+        # Determine the next available version number
+        version = 1
+        while os.path.exists(f"{base_filename}{version}.json"):
+            version += 1
+        
+        filename = f"{base_filename}{version}.json"
     
     # Prepare data to save
     output_data = {
@@ -462,6 +465,7 @@ def print_sample_responses(eval_list, num_samples=3):
 def main():
     parser = argparse.ArgumentParser(description="Generate and store steered/unsteered responses")
     parser.add_argument("--exp_name", type=str, default="exp1", help="Experiment name")
+    parser.add_argument("--results_file_name", type=str, default=None, help="Results file name")
 
     # Dataset arguments
     parser.add_argument("--data_path", type=str, default="./data/", help="Path to the data directory")
