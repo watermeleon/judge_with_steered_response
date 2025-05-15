@@ -389,9 +389,10 @@ def main():
     wandb.config.update(settings)
 
     data_type = settings["data_set"]
+    data_type = "sycophancy" if data_type == "feedback" else data_type
     print(f"# Data type found: {data_type}")
     
-    responses = responses[:5]
+    # responses = responses[:5]
     # Run evaluations
     responses = run_evaluations(responses, client, args.openai_model, data_type)
     
@@ -421,7 +422,7 @@ def main():
         fig = plot_category_comparison(statistics)
         full_summary['statistics'] = statistics
         wandb.log({"single_steered_fig": wandb.Image(fig)})
-        
+
     # full_summary['single_steered_fig'] = fig
     wandb.log(full_summary)
     table = display_comparison_table(metric_summary)
