@@ -576,8 +576,7 @@ def print_preference_summary(results):
     print(f"    Steered correctness: {steered['suggestive_steered']['mean_steered_correctness']:.2f}")
     print(f"    Improvement: {steered['suggestive_steered']['correctness_improvement']:.2f}")
 
-
-def plot_category_comparison(statistics, color_scheme='blue_orange'):
+def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=True):
     """
     Plot all four evaluation types (base_single, base_steering, suggestive_single, suggestive_steering)
     for each category with grouped bars.
@@ -585,6 +584,7 @@ def plot_category_comparison(statistics, color_scheme='blue_orange'):
     Parameters:
     statistics (dict): Statistics dictionary from process_category_statistics
     color_scheme (str): Color scheme to use - 'blue_orange' or 'purple_green'
+    show_std (bool): Whether to include standard deviation as error bars
 
     Returns:
     matplotlib.figure.Figure: The generated figure
@@ -596,6 +596,10 @@ def plot_category_comparison(statistics, color_scheme='blue_orange'):
     base_steered_values = []
     suggestive_single_values = []
     suggestive_steered_values = []
+    base_single_stds = []
+    base_steered_stds = []
+    suggestive_single_stds = []
+    suggestive_steered_stds = []
     
     for category in categories:
         if category in statistics:
@@ -604,10 +608,20 @@ def plot_category_comparison(statistics, color_scheme='blue_orange'):
             suggestive_single_mean = statistics[category].get('single_suggestive', {}).get('mean', 0)
             suggestive_steered_mean = statistics[category].get('steered_suggestive', {}).get('mean', 0)
             
+            base_single_std = statistics[category].get('single_base', {}).get('std', 0)
+            base_steered_std = statistics[category].get('steered_base', {}).get('std', 0)
+            suggestive_single_std = statistics[category].get('single_suggestive', {}).get('std', 0)
+            suggestive_steered_std = statistics[category].get('steered_suggestive', {}).get('std', 0)
+            
             base_single_values.append(base_single_mean)
             base_steered_values.append(base_steered_mean)
             suggestive_single_values.append(suggestive_single_mean)
             suggestive_steered_values.append(suggestive_steered_mean)
+            
+            base_single_stds.append(base_single_std)
+            base_steered_stds.append(base_steered_std)
+            suggestive_single_stds.append(suggestive_single_std)
+            suggestive_steered_stds.append(suggestive_steered_std)
     
     # Define color schemes - using darker colors for single, lighter for steered
     if color_scheme == 'blue_orange':
@@ -658,15 +672,19 @@ def plot_category_comparison(statistics, color_scheme='blue_orange'):
     pos3 = x + 0.5 * bar_width + group_gap/2  # Suggestive single
     pos4 = x + 1.5 * bar_width + group_gap/2  # Suggestive steered
     
-    # Create bars
+    # Create bars with optional error bars
     bars1 = ax.bar(pos1, base_single_values, bar_width, 
-                   label='Base Single', color=colors['base_single'], alpha=0.9)
+                   label='Base Single', color=colors['base_single'], alpha=0.9,
+                   yerr=base_single_stds if show_std else None, capsize=5)
     bars2 = ax.bar(pos2, base_steered_values, bar_width,
-                   label='Base Steered', color=colors['base_steered'], alpha=0.9)
+                   label='Base Steered', color=colors['base_steered'], alpha=0.9,
+                   yerr=base_steered_stds if show_std else None, capsize=5)
     bars3 = ax.bar(pos3, suggestive_single_values, bar_width,
-                   label='Suggestive Single', color=colors['suggestive_single'], alpha=0.9)
+                   label='Suggestive Single', color=colors['suggestive_single'], alpha=0.9,
+                   yerr=suggestive_single_stds if show_std else None, capsize=5)
     bars4 = ax.bar(pos4, suggestive_steered_values, bar_width,
-                   label='Suggestive Steered', color=colors['suggestive_steered'], alpha=0.9)
+                   label='Suggestive Steered', color=colors['suggestive_steered'], alpha=0.9,
+                   yerr=suggestive_steered_stds if show_std else None, capsize=5)
     
     # Customize the plot
     ax.set_xlabel('Categories', fontsize=12)
@@ -703,6 +721,7 @@ def plot_category_comparison(statistics, color_scheme='blue_orange'):
     
     plt.tight_layout()
     return fig
+
 
 
 # if __name__ == "__main__":
