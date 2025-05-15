@@ -363,8 +363,6 @@ def main():
     
     args = parser.parse_args()
 
-    wandb.init(project="judge_responses", mode="online")
-    wandb.config.update(vars(args))
     
     # Default to running all scenarios
     if not any([args.run_scenario1, args.run_scenario2, args.run_scenario3, args.run_all]):
@@ -381,6 +379,14 @@ def main():
     # Load responses and initialize client
     settings, responses = load_responses(args.input_file)
     client = initialize_openai_client(args.api_key)
+
+    exp_name = None
+    if "exp_name" in settings:
+        exp_name = settings["exp_name"]
+
+    wandb.init(project="judge_responses", mode="online")
+    # upload the settings from the training run not this run
+    wandb.config.update(settings)
 
     data_type = settings["data_set"]
     print(f"# Data type found: {data_type}")
@@ -409,16 +415,21 @@ def main():
     print(f"Results saved to {output_file}")
 
 
-    from steering_vec_functions.visualizations.viz_judge_results import process_category_statistics, plot_category_comparison, display_comparison_table
-    statistics = process_category_statistics(responses, cat_param='category_id', metric_name='metric_score')
-    fig = plot_category_comparison(statistics)
-    full_summary['statistics'] = statistics
-    wandb.log({"single_steered_fig": wandb.Image(fig)})
+    from steering_vec_functions.visualizations.viz_judge_results import process_category_statistics, plot_category_comparison, display_comparison_table, plot_summary_comparison
+    if data_type == "manipulation":
+        statistics = process_category_statistics(responses, cat_param='category_id', metric_name='metric_score')
+        fig = plot_category_comparison(statistics)
+        full_summary['statistics'] = statistics
+        wandb.log({"single_steered_fig": wandb.Image(fig)})
+        
     # full_summary['single_steered_fig'] = fig
     wandb.log(full_summary)
     table = display_comparison_table(metric_summary)
     score_count_table = wandb.Table(dataframe=table)
     wandb.log({"BaseSugg_Relative_Score_count": score_count_table})
+    fig = plot_summary_comparison(metric_summary, font_size_multiplier=1.5)
+    wandb.log({"avg_per_judge_fig": wandb.Image(fig)})
+
 
     wandb.finish()
     

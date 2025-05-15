@@ -149,12 +149,12 @@ def generate_model_responses(eval_list, steering_vector):
     for item in tqdm(eval_list):
         # print(item)
         # Check if this is a prompt-only item or a full poem dict
-        is_prompt_only = 'base_prompt' not in item
+        # is_prompt_only = 'base_prompt' not in item
         
         # Generate responses based on available prompts
-        if not is_prompt_only:
-            item["base_response"] = steering_vector.get_response(item["base_prompt"])
-            print(f"Generated base response: {item['base_response'][:100]}...")
+        # if not is_prompt_only:
+        item["base_response"] = steering_vector.get_response(item["base_prompt"])
+        print(f"Generated base response: {item['base_response'][:100]}...")
         
         item["suggestive_response"] = steering_vector.get_response(item["suggestive_prompt"])
         print(f"Generated suggestive response: {item['suggestive_response'][:100]}...")
@@ -350,12 +350,12 @@ def generate_steered_responses(eval_list, steering_vector):
     """
     for item in tqdm(eval_list):
         # Check if this is a prompt-only item or a full dict
-        is_prompt_only = 'base_prompt' not in item
+        # is_prompt_only = 'base_prompt' not in item
         
         # Generate steered responses based on available prompts
-        if not is_prompt_only:
-            item["base_steered_response"] = steering_vector.get_steered_response(item["base_prompt"])
-            print(f"Generated base steered response: {item['base_steered_response'][:100]}...")
+        # if not is_prompt_only:
+        item["base_steered_response"] = steering_vector.get_steered_response(item["base_prompt"])
+        print(f"Generated base steered response: {item['base_steered_response'][:100]}...")
         
         item["suggestive_steered_response"] = steering_vector.get_steered_response(item["suggestive_prompt"])
         print(f"Generated suggestive steered response: {item['suggestive_steered_response'][:100]}...")
@@ -407,8 +407,10 @@ def save_responses_to_json(eval_list, args):
     # Create date for filename
     date = datetime.datetime.now().strftime("%Y%m%d")
     
-    # Construct base filename
-    data_subset = args.feedback_subset if args.feedback_subset else "all"
+    # Construct base filename 
+    data_subset = ""
+    if args.data_set == "feedback":
+        data_subset = args.feedback_subset if args.feedback_subset else "all"
     base_filename = os.path.join(args.results_folder, f"responses_{args.exp_name}_{data_subset}_{date}_v")
     
     # Determine the next available version number
@@ -432,24 +434,23 @@ def save_responses_to_json(eval_list, args):
     return filename
 
 
-def print_sample_responses(eval_list, num_samples=3, prompt_only=False):
+def print_sample_responses(eval_list, num_samples=3):
     """
     Print sample responses for debugging and verification.
     
     Args:
         eval_list (list): List of dictionaries with responses
         num_samples (int): Number of samples to print
-        prompt_only (bool): Whether this is a prompt-only list
     """
     print("\n===== SAMPLE RESPONSES =====")
     for i, item in enumerate(eval_list[:num_samples]):
         print(f"\nSample {i+1}:")
         
-        if not prompt_only:
-            print(f"Base Prompt: {item.get('base_prompt', 'N/A')}")
-            print(f"Base Response: {item.get('base_response', 'N/A')}")
-            if 'base_steered_response' in item:
-                print(f"Base Steered Response: {item['base_steered_response']}")
+        # if not prompt_only:
+        print(f"Base Prompt: {item.get('base_prompt', 'N/A')}")
+        print(f"Base Response: {item.get('base_response', 'N/A')}")
+        if 'base_steered_response' in item:
+            print(f"Base Steered Response: {item['base_steered_response']}")
         
         print(f"Suggestive Prompt: {item['suggestive_prompt']}")
         print(f"Suggestive Response: {item.get('suggestive_response', 'N/A')}")
@@ -460,8 +461,8 @@ def print_sample_responses(eval_list, num_samples=3, prompt_only=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate and store steered/unsteered responses")
-    # add exp_name 
     parser.add_argument("--exp_name", type=str, default="exp1", help="Experiment name")
+
     # Dataset arguments
     parser.add_argument("--data_path", type=str, default="./data/", help="Path to the data directory")
     parser.add_argument("--data_set", type=str, default="feedback", choices=["answer", "feedback", "are_you_sure", "manipulation"], 
@@ -470,7 +471,11 @@ def main():
                         help="Subset of feedback dataset to use")
     parser.add_argument("--short_version", action="store_true", help="Whether to shorten poems to first 3 lines")
     parser.add_argument("--num_samples", type=int, default=30, help="Number of samples to evaluate")
-    
+
+    # add instruct_short_respone
+    parser.add_argument("--instruct_short_response", action="store_true", help="Whether to use short response instructions")
+
+
     # Model arguments
     parser.add_argument("--model_name", type=str, default="google/gemma-2-2b-it", help="Model name")
     parser.add_argument("--use_quantizer", action="store_true", help="Whether to use quantization")
@@ -490,10 +495,10 @@ def main():
     
     
     # Mode arguments
-    parser.add_argument("--prompt_only", action="store_true", 
-                        help="Use prompt-only mode (from prompt_file instead of dataset)")
-    parser.add_argument("--prompt_file", type=str, default=None, 
-                        help="Path to a file with a list of prompts (one per line)")
+    # parser.add_argument("--prompt_only", action="store_true", 
+    #                     help="Use prompt-only mode (from prompt_file instead of dataset)")
+    # parser.add_argument("--prompt_file", type=str, default=None, 
+    #                     help="Path to a file with a list of prompts (one per line)")
     
     # Output arguments
     parser.add_argument("--results_folder", type=str, default="results/responses/", help="Folder to save results")
@@ -514,58 +519,42 @@ def main():
     
     eval_list = []
     
-    # Handle prompt-only mode or dataset mode
-    if args.prompt_only and args.prompt_file:
-        # Load prompts from file
-        with open(args.prompt_file, 'r') as f:
-            prompts = [line.strip() for line in f if line.strip()]
+    
+    if args.data_set == "feedback":
+        # Load dataset
+        dataset_handler = DatasetHandler(data_path=args.data_path)
+        syco_data = dataset_handler.load_sycophancy_dataset(data_type=args.data_set)
+        print(f"Loaded dataset with {len(syco_data)} entries.")
         
-        # Take subset if specified
-        if args.num_samples < len(prompts):
-            prompts = prompts[:args.num_samples]
-            print(f"Using subset of {len(prompts)} prompts")
-            
-        # Prepare prompt-only list
-        eval_list = prepare_prompt_only_list(prompts)
-        mode = "prompt_only"
+        # Filter by subset if specified
+        if args.feedback_subset:
+            syco_data = filter_dataset_by_subset(syco_data, args.feedback_subset)
         
-    else:
-        if args.data_set == "feedback":
-            # Load dataset
-            dataset_handler = DatasetHandler(data_path=args.data_path)
-            syco_data = dataset_handler.load_sycophancy_dataset(data_type=args.data_set)
-            print(f"Loaded dataset with {len(syco_data)} entries.")
-            
-            # Filter by subset if specified
-            if args.feedback_subset:
-                syco_data = filter_dataset_by_subset(syco_data, args.feedback_subset)
-            
-            # Handle short poems if needed
-            if args.feedback_subset == "poems" and args.short_version:
-                syco_data = process_short_poems(syco_data, True)
-                print(f"Average length of poems: {average_length(syco_data, tokenizer)}")
-            
-            # Prepare evaluation list
-            eval_list = prepare_syco_eval_list(syco_data)
+        # Handle short poems if needed
+        if args.feedback_subset == "poems" and args.short_version:
+            syco_data = process_short_poems(syco_data, True)
+            print(f"Average length of poems: {average_length(syco_data, tokenizer)}")
         
-        elif args.data_set == "manipulation":
-            manipulation_data_path = "./steering_vec_functions/manipulation_data/manipulation_dataset.json"
-            # Load your dataset
-            dataset_handler = AIManipulationDataset(manipulation_data_path, short_version=args.short_version)
+        # Prepare evaluation list
+        eval_list = prepare_syco_eval_list(syco_data)
+    
+    elif args.data_set == "manipulation":
+        manipulation_data_path = "./steering_vec_functions/manipulation_data/manipulation_dataset.json"
+        dataset_handler = AIManipulationDataset(manipulation_data_path, short_version=args.short_version, instruct_short_response=args.instruct_short_response)
 
-            # Get questions for testing
-            base_questions = dataset_handler.get_base_questions()
-            manipulative_questions, full_data = dataset_handler.get_manipulative_questions()  # Default: subtle
-            
-            eval_list = []
-            for i, base_q in enumerate(base_questions):
-                # Create a dictionary for each question
-                question_dict = {
-                    "base_prompt": base_q,
-                    "suggestive_prompt": manipulative_questions[i],
-                    "full_data": full_data[i]
-                }
-                eval_list.append(question_dict)
+        # Get questions for testing
+        base_questions = dataset_handler.get_base_questions()
+        manipulative_questions, full_data = dataset_handler.get_manipulative_questions()  # Default: subtle
+        
+        eval_list = []
+        for i, base_q in enumerate(base_questions):
+            # Create a dictionary for each question
+            question_dict = {
+                "base_prompt": base_q,
+                "suggestive_prompt": manipulative_questions[i],
+                "full_data": full_data[i]
+            }
+            eval_list.append(question_dict)
 
         
 
@@ -593,7 +582,7 @@ def main():
     
     # Print sample responses if requested
     if args.print_samples:
-        print_sample_responses(eval_list, num_samples=3, prompt_only=args.prompt_only)
+        print_sample_responses(eval_list, num_samples=3)
     
     # Save responses to JSON
     output_file = save_responses_to_json(eval_list, args)

@@ -6,13 +6,14 @@ from collections import defaultdict
 
 
 
-def plot_summary_comparison(summary, font_size_multiplier=1.0):
+def plot_summary_comparison(summary, font_size_multiplier=1.5, show_means=True):
     """
     Create a bar plot comparing base and suggestive responses across different evaluation types.
     
     Parameters:
     summary (dict): Summary statistics for each scenario
     font_size_multiplier (float): Factor to multiply all font sizes by (default: 1.0)
+    show_means (bool): Whether to display the mean value above each bar (default: False)
     
     Returns:
     matplotlib.figure.Figure: The generated figure
@@ -51,10 +52,17 @@ def plot_summary_comparison(summary, font_size_multiplier=1.0):
     }
     
     # Create bars
-    _ = ax.bar(index - bar_width/2, base_scores, bar_width, 
-                  yerr=base_stds, capsize=5, alpha=0.8, **styles['base'])
-    _ = ax.bar(index + bar_width/2, suggestive_scores, bar_width, 
-                  yerr=suggestive_stds, capsize=5, alpha=0.8, **styles['suggestive'])
+    base_bars = ax.bar(index - bar_width/2, base_scores, bar_width, 
+                       yerr=base_stds, capsize=5, alpha=0.8, **styles['base'])
+    suggestive_bars = ax.bar(index + bar_width/2, suggestive_scores, bar_width, 
+                             yerr=suggestive_stds, capsize=5, alpha=0.8, **styles['suggestive'])
+    
+    # Optionally add mean values above bars
+    if show_means:
+        for bars, scores in [(base_bars, base_scores), (suggestive_bars, suggestive_scores)]:
+            for bar, score in zip(bars, scores):
+                ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.05, 
+                        f'{score:.2f}', ha='center', va='bottom', fontsize=10 * font_size_multiplier)
     
     # Apply font sizes
     sizes = {
@@ -66,7 +74,7 @@ def plot_summary_comparison(summary, font_size_multiplier=1.0):
     
     # Configure plot
     ax.set_title('Base vs Suggestive Response Scores Across Evaluation Types', 
-                fontsize=sizes['title'], pad=20)
+                 fontsize=sizes['title'], pad=20)
     ax.set_ylabel('Score', fontsize=sizes['label'])
     ax.set_xticks(index)
     ax.set_xticklabels(categories, fontsize=sizes['tick'])
