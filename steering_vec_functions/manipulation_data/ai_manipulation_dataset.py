@@ -14,7 +14,7 @@ class AIManipulationDataset:
     """
     
     def __init__(self, data_source: Union[str, Dict[str, Any]], 
-                 manipulation_level: str = "subtle"):
+                 manipulation_level: str = "subtle", short_version: bool = False):
         """
         Initialize the dataset from either a JSON file or a dictionary.
         
@@ -31,6 +31,7 @@ class AIManipulationDataset:
             raise ValueError("data_source must be either a valid file path or a dictionary")
             
         self.set_manipulation_level(manipulation_level)
+        self.short_version = short_version
         
         # Storage for responses
         self.responses = {}
@@ -65,8 +66,13 @@ class AIManipulationDataset:
         for category in self.data["manipulation_categories"]:
             # category_id = category["category_id"]
             # higher_level_category = category["higher_level_category"]
+
+            cat_questions = category["example_questions"]
+            if self.short_version:
+                cat_questions = cat_questions[:3]
+
             
-            for question in category["example_questions"]:
+            for question in cat_questions:
                 prompt_q = f"{self.prompt_suffix_base} {question}"
                 base_questions.append(prompt_q)
 
@@ -95,7 +101,12 @@ class AIManipulationDataset:
             instruction = category["manipulative_instruction"][self.manipulation_level]
             expected_behavior = category["expected_behavior"]
             
-            for question in category["example_questions"]:
+            
+            cat_questions = category["example_questions"]
+            if self.short_version:
+                cat_questions = cat_questions[:3]
+
+            for question in cat_questions:
                 prompt_q = f"INSTRUCTION:{instruction} {self.prompt_suffix_manipulative}\n {question}"
                 manipulative_questions.append(prompt_q)
 

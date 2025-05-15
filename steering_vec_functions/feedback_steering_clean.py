@@ -227,7 +227,7 @@ def generate_model_responses(eval_list, steering_vector):
 
 def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, generation_length_optimization=50, temperature=0.1, 
                          model_name=None, use_load_vector=True, max_norm=None, dataset=None, 
-                         multi_sample=True, correct_only=True):
+                         multi_sample=True, correct_only=True, use_clamp_steer=False):
     """Create and optimize a steering vector.
     
     Args:
@@ -247,7 +247,7 @@ def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_le
     """
     steering_vector = SteeringVector(model, tokenizer, layer=layer, 
                                    generation_length=generation_length, 
-                                   temperature=temperature)
+                                   temperature=temperature, use_clamp_steer=use_clamp_steer)
     
     if use_load_vector:
         steering_vector.load(model_name=model_name)
@@ -299,7 +299,9 @@ def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_le
         # Single sample optimization (original behavior)
         if dataset is not None:    
             eval_list = dataset
-            prompt_idx = 34   # Third to last
+            prompt_idx = 0   # Third to last
+            # prompt_idx = -3   # Third to last
+            # prompt_idx = 34   # Third to last
             # prompt_idx = -7   # Third to last
             pos_prompt = eval_list[prompt_idx]["suggestive_prompt"]
             objective_prompt = eval_list[prompt_idx]["base_prompt"]
@@ -407,7 +409,7 @@ def save_responses_to_json(eval_list, args):
     
     # Construct base filename
     data_subset = args.feedback_subset if args.feedback_subset else "all"
-    base_filename = os.path.join(args.results_folder, f"responses_{data_subset}_{date}_v")
+    base_filename = os.path.join(args.results_folder, f"responses_{args.exp_name}_{data_subset}_{date}_v")
     
     # Determine the next available version number
     version = 1
@@ -458,14 +460,15 @@ def print_sample_responses(eval_list, num_samples=3, prompt_only=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate and store steered/unsteered responses")
-    
+    # add exp_name 
+    parser.add_argument("--exp_name", type=str, default="exp1", help="Experiment name")
     # Dataset arguments
     parser.add_argument("--data_path", type=str, default="./data/", help="Path to the data directory")
     parser.add_argument("--data_set", type=str, default="feedback", choices=["answer", "feedback", "are_you_sure", "manipulation"], 
                         help="Type of sycophancy dataset to load")
-    parser.add_argument("--feedback_subset", type=str, default=None, choices=["poems", "math", "arguments"], 
+    parser.add_argument("--feedback_subset", type=str, default="poems", choices=["poems", "math", "arguments"], 
                         help="Subset of feedback dataset to use")
-    parser.add_argument("--short_poems", action="store_true", help="Whether to shorten poems to first 3 lines")
+    parser.add_argument("--short_version", action="store_true", help="Whether to shorten poems to first 3 lines")
     parser.add_argument("--num_samples", type=int, default=30, help="Number of samples to evaluate")
     
     # Model arguments
@@ -482,6 +485,8 @@ def main():
     parser.add_argument("--generation_length_optimization", type=int, default=50, help="Generation length for responses")
     parser.add_argument("--max_norm", type=float, default=None, help="Max norm for steering vector. If None, no max norm is applied.")
     parser.add_argument("--multi_sample", action="store_true", help="Whether to use multiple samples for optimization")
+    # use_clamp_steer
+    parser.add_argument("--use_clamp_steer", action="store_true", help="Whether to use clamp steering")
     
     
     # Mode arguments
@@ -536,7 +541,7 @@ def main():
                 syco_data = filter_dataset_by_subset(syco_data, args.feedback_subset)
             
             # Handle short poems if needed
-            if args.feedback_subset == "poems" and args.short_poems:
+            if args.feedback_subset == "poems" and args.short_version:
                 syco_data = process_short_poems(syco_data, True)
                 print(f"Average length of poems: {average_length(syco_data, tokenizer)}")
             
@@ -546,7 +551,7 @@ def main():
         elif args.data_set == "manipulation":
             manipulation_data_path = "./steering_vec_functions/manipulation_data/manipulation_dataset.json"
             # Load your dataset
-            dataset_handler = AIManipulationDataset(manipulation_data_path)
+            dataset_handler = AIManipulationDataset(manipulation_data_path, short_version=args.short_version)
 
             # Get questions for testing
             base_questions = dataset_handler.get_base_questions()
@@ -569,7 +574,7 @@ def main():
 
     steering_vector = create_steering_vector(   
         model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.generation_length_optimization, args.temperature, model_name=args.model_name, 
-        use_load_vector=args.use_load_vector, max_norm=args.max_norm, dataset=eval_list, multi_sample=args.multi_sample
+        use_load_vector=args.use_load_vector, max_norm=args.max_norm, dataset=eval_list, multi_sample=args.multi_sample, use_clamp_steer=args.use_clamp_steer
     )
     print(f"The steering vector has norm {steering_vector.vector.norm():.4f}")
 

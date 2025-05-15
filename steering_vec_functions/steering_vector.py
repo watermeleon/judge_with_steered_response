@@ -10,7 +10,7 @@ from steering_vec_functions.model_utils import save_steering_vector, load_steeri
 class SteeringVector:
     """Class to handle steering vector optimization and application."""
     
-    def __init__(self, model, tokenizer, layer=15, generation_length = 20, temperature=0.0):
+    def __init__(self, model, tokenizer, layer=15, generation_length = 20, temperature=0.0, use_clamp_steer=False):
         self.model = model
         self.tokenizer = tokenizer
         self.layer = layer
@@ -18,6 +18,8 @@ class SteeringVector:
         self.loss_info = None
         self.generation_length = generation_length 
         self.temperature = temperature
+        self.use_clamp_steer = use_clamp_steer
+
     
     def optimize(self, prompt, incorrect_completion, correct_completion, 
                 max_iters=20, lr=0.1, debug=False, max_norm=None) -> Tuple[torch.Tensor, Dict]:
@@ -31,6 +33,7 @@ class SteeringVector:
             dst_completions=correct_completion,
         )
         
+        vector_clamp = 1 if self.use_clamp_steer else None
         self.vector, self.loss_info = steering_opt.optimize_vector(
             self.model,
             [datapoint],
@@ -40,7 +43,8 @@ class SteeringVector:
             lr=lr,
             debug=debug,
             max_norm=max_norm,
-            # target_loss = 3
+            target_loss = 3,
+            vector_clamp=vector_clamp,
 
         )
         return self.vector, self.loss_info
@@ -58,6 +62,7 @@ class SteeringVector:
             )
             datapoints.append(datapoint)
             
+        vector_clamp = 1 if self.use_clamp_steer else None
         self.vector, self.loss_info = steering_opt.optimize_vector(
             self.model,
             datapoints,
@@ -67,6 +72,7 @@ class SteeringVector:
             lr=lr,
             debug=debug,
             max_norm= max_norm,
+            vector_clamp=vector_clamp,
         )
         return self.vector, self.loss_info
     
@@ -92,7 +98,11 @@ class SteeringVector:
             max_tokens = self.generation_length
 
         formatted_question = format_question(question, self.tokenizer)
-        steering_hook = (self.layer, steering_opt.make_steering_hook_hf(self.vector))
+        steer_matrix = None
+        if self.use_clamp_steer:
+            steer_matrix = steering_opt.make_abl_mat(self.vector)
+
+        steering_hook = (self.layer, steering_opt.make_steering_hook_hf(self.vector, steer_matrix))
         
         with steering_opt.hf_hooks_contextmanager(self.model, [steering_hook]): 
             input_ids = self.tokenizer(formatted_question, return_tensors='pt').input_ids
