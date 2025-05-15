@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 from openai import OpenAI
+import wandb
 
 # Import functions from judge_responses.py
 from steering_vec_functions.judge.judge_responses import (
@@ -351,8 +352,8 @@ def main():
     # Judge arguments
     parser.add_argument("--openai_model", type=str, default="gpt-4o-mini", help="OpenAI model for judging")
     parser.add_argument("--api_key", type=str, default=None, help="OpenAI API key")
-    parser.add_argument("--data_type", type=str, default="manipulation", 
-                       choices=["sycophancy", "manipulation"], help="Type of evaluation")
+    # parser.add_argument("--data_type", type=str, default="manipulation", 
+    #                    choices=["sycophancy", "manipulation"], help="Type of evaluation")
     
     # Scenario selection
     parser.add_argument("--run_scenario1", action="store_true", help="Run single response evaluation")
@@ -361,6 +362,9 @@ def main():
     parser.add_argument("--run_all", action="store_true", help="Run all scenarios")
     
     args = parser.parse_args()
+
+    wandb.init(project="judge_responses", mode="online")
+    wandb.config.update(vars(args))
     
     # Default to running all scenarios
     if not any([args.run_scenario1, args.run_scenario2, args.run_scenario3, args.run_all]):
@@ -369,16 +373,25 @@ def main():
     if args.run_all:
         args.run_scenario1 = args.run_scenario2 = args.run_scenario3 = True
     
+    if "/" not in args.input_file:
+        base_path = "results/responses/"
+        print("File directly provided so am setting base path to: " + repr(base_path))
+        args.input_file = base_path + args.input_file
+        
     # Load responses and initialize client
     settings, responses = load_responses(args.input_file)
     client = initialize_openai_client(args.api_key)
+
+    data_type = settings["data_set"]
+    print(f"# Data type found: {data_type}")
     
+    responses = responses[:5]
     # Run evaluations
-    responses = run_evaluations(responses, client, args.openai_model, args.data_type)
+    responses = run_evaluations(responses, client, args.openai_model, data_type)
     
     # Compute statistics for metric score
     metric_summary = compute_statistics_for_metric(responses, "metric_score")
-    print_metric_summary(metric_summary, args.data_type)
+    print_metric_summary(metric_summary, data_type)
     
     # Compute statistics for correctness (if needed)
     correctness_summary = compute_statistics_for_metric(responses, "correctness")
@@ -386,14 +399,28 @@ def main():
     
     # Combine summaries for saving
     full_summary = {
-        f"{args.data_type}_scores": metric_summary,
+        f"{data_type}_scores": metric_summary,
         "correctness_scores": correctness_summary
     }
-    
+
+
     # Save results
     output_file = save_results(responses, full_summary, args.input_file, args)
     print(f"Results saved to {output_file}")
 
 
+    from steering_vec_functions.visualizations.viz_judge_results import process_category_statistics, plot_category_comparison, display_comparison_table
+    statistics = process_category_statistics(responses, cat_param='category_id', metric_name='metric_score')
+    fig = plot_category_comparison(statistics)
+    full_summary['statistics'] = statistics
+    wandb.log({"single_steered_fig": wandb.Image(fig)})
+    # full_summary['single_steered_fig'] = fig
+    wandb.log(full_summary)
+    table = display_comparison_table(metric_summary)
+    score_count_table = wandb.Table(dataframe=table)
+    wandb.log({"BaseSugg_Relative_Score_count": score_count_table})
+
+    wandb.finish()
+    
 if __name__ == "__main__":
     main()

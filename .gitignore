@@ -9,3 +9,4 @@
 
 redundant/
 !*manipulation_dataset.json
+wandb/
