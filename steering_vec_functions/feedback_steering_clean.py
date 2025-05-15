@@ -410,6 +410,7 @@ def save_responses_to_json(eval_list, args):
     # Construct base filename 
     if args.results_file_name is not None:
         filename = args.results_file_name
+        filename = os.path.join(args.results_folder, filename)
     else:
         data_subset = ""
         if args.data_set == "feedback":
