@@ -257,7 +257,7 @@ def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_le
         # Use multiple samples from dataset
         eval_list = dataset
         # use_indices = [-7, 34]  # You can modify these indices as needed
-        use_indices = [0, 34]  # You can modify these indices as needed
+        use_indices = [0, 3]  # You can modify these indices as needed
         optimization_samples = []
         
         for idx in use_indices:
