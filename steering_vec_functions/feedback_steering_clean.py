@@ -127,7 +127,7 @@ def generate_model_responses(eval_list, steering_vector):
 
 def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_length, generation_length_optimization=50, temperature=0.1, 
                          model_name=None, use_load_vector=True, max_norm=None, dataset=None, 
-                         multi_sample=True, correct_only=True, use_clamp_steer=False):
+                         multi_sample=True, correct_only=True, use_clamp_steer=False, steer_vector_name=""):
     """Create and optimize a steering vector.
     
     Args:
@@ -145,12 +145,14 @@ def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_le
         multi_sample: Whether to use multiple samples for optimization
         correct_only: Whether to only use correct responses (set incorrect to None)
     """
+    # Allow for creating a steering vector with a different name
+    sv_model_name=model_name+steer_vector_name
     steering_vector = SteeringVector(model, tokenizer, layer=layer, 
                                    generation_length=generation_length, 
                                    temperature=temperature, use_clamp_steer=use_clamp_steer)
     
     if use_load_vector:
-        steering_vector.load(model_name=model_name)
+        steering_vector.load(model_name=sv_model_name)
         return steering_vector
     
     if multi_sample and dataset is not None:
@@ -200,9 +202,6 @@ def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_le
         if dataset is not None:    
             eval_list = dataset
             prompt_idx = 0   # Third to last
-            # prompt_idx = -3   # Third to last
-            # prompt_idx = 34   # Third to last
-            # prompt_idx = -7   # Third to last
             pos_prompt = eval_list[prompt_idx]["suggestive_prompt"]
             objective_prompt = eval_list[prompt_idx]["base_prompt"]
         else:
@@ -239,7 +238,7 @@ def create_steering_vector(model, tokenizer, layer, num_iters, lr, generation_le
         )
     
     print(f"Steering vector optimized with final loss: {loss_info['loss']:.4f}")
-    steering_vector.save(model_name=model_name)
+    steering_vector.save(model_name=sv_model_name, layer_name=layer)
     return steering_vector
 
 
@@ -266,27 +265,99 @@ def print_scores(syco_eval_list, num_to_print=5):
         print(f"Individual Judge Scores:: {poem_dict['judge_individual']}")
         print()
 
-
-def prepare_prompt_only_list(prompts_list):
+def group_data_by_category(base_questions, manipulative_questions, full_data):
     """
-    Prepare a list with only suggestive prompts (no base variants).
+    Group the questions by category_id.
+    """
+    categories = {}
     
-    Args:
-        prompts_list (list): List of prompt strings
+    for i, base_q in enumerate(base_questions):
+        category_id = full_data[i]["category_id"]
         
-    Returns:
-        list: List of dictionaries with only suggestive prompts
-    """
-    eval_list = []
-    for prompt in prompts_list:
-        prompt_dict = {
-            "suggestive_prompt": prompt,
-        }
-        eval_list.append(prompt_dict)
-    
-    print(f"Prepared {len(eval_list)} prompt-only entries for evaluation")
-    return eval_list
+        if category_id not in categories:
+            categories[category_id] = {
+                "base_questions": [],
+                "manipulative_questions": [],
+                "full_data": []
+            }
+            
+        categories[category_id]["base_questions"].append(base_q)
+        categories[category_id]["manipulative_questions"].append(manipulative_questions[i])
+        categories[category_id]["full_data"].append(full_data[i])
+        
+    return categories
 
+
+def generate_and_steer_per_cat(model, tokenizer, categories, args):
+    """
+    Process each category with its own steering vector.
+    """
+    all_results = []
+    
+    # Calculate samples per category if num_samples is specified
+    samples_per_category = None
+    if args.num_samples > 0:
+        # Distribute samples evenly, ensuring at least 1 per category
+        samples_per_category = max(1, args.num_samples // len(categories))
+        print(f"Using approximately {samples_per_category} samples per category")
+    
+    for cat_number, (category_id, category_data) in enumerate(categories.items()):
+        print(f"\n\n--- Processing Category: {category_id} - index {cat_number}/{len(categories)}---")
+        
+        # Prepare evaluation list for the first question (for vector creation)
+        first_question = [{
+            "base_prompt": category_data["base_questions"][0],
+            "suggestive_prompt": category_data["manipulative_questions"][0],
+            "full_data": category_data["full_data"][0]
+        }]
+        
+        # Create steering vector specific to this category
+        steer_vector_name = f"_cat_{category_id}"
+        steering_vector = create_steering_vector(
+            model, tokenizer, args.layer, args.num_iters, args.lr, 
+            args.generation_length, args.generation_length_optimization, 
+            args.temperature, model_name=args.model_name, 
+            use_load_vector=args.use_load_vector, max_norm=args.max_norm, 
+            dataset=first_question, multi_sample=False, 
+            use_clamp_steer=args.use_clamp_steer, steer_vector_name=steer_vector_name
+        )
+        print(f"Created steering vector for category {category_id} with norm {steering_vector.vector.norm():.4f}")
+        
+        # Prepare evaluation list for the remaining questions
+        if len(category_data["base_questions"]) > 1:
+            eval_list = []
+            
+            # Determine how many questions to use from this category
+            if samples_per_category:
+                # Use up to samples_per_category questions (skip the first one used for vector creation)
+                num_to_use = min(samples_per_category, len(category_data["base_questions"]) - 1)
+            else:
+                # Use all remaining questions
+                num_to_use = len(category_data["base_questions"]) - 1
+                
+            # Select questions (skip the first one)
+            for i in range(1, num_to_use + 1):
+                question_dict = {
+                    "base_prompt": category_data["base_questions"][i],
+                    "suggestive_prompt": category_data["manipulative_questions"][i],
+                    "full_data": category_data["full_data"][i],
+                    "category_id": category_id  # Add the category_id explicitly
+                }
+                eval_list.append(question_dict)
+            
+            # Generate responses using the category-specific steering vector
+            if eval_list:
+                print(f"Generating steered responses for {len(eval_list)} questions in category {category_id}")
+                eval_list = generate_steered_responses(eval_list, steering_vector)
+                eval_list = generate_model_responses(eval_list, steering_vector)
+                all_results.extend(eval_list)
+    
+    # Check if we need to further limit the total number of samples
+    if args.num_samples > 0 and len(all_results) > args.num_samples:
+        print(f"Further limiting to exactly {args.num_samples} samples out of {len(all_results)} total")
+        all_results = all_results[:args.num_samples]
+        
+    return all_results
 
 def save_responses_to_json(eval_list, args):
     """
@@ -390,9 +461,9 @@ def main():
     parser.add_argument("--generation_length_optimization", type=int, default=50, help="Generation length for responses")
     parser.add_argument("--max_norm", type=float, default=None, help="Max norm for steering vector. If None, no max norm is applied.")
     parser.add_argument("--multi_sample", action="store_true", help="Whether to use multiple samples for optimization")
-    # use_clamp_steer
     parser.add_argument("--use_clamp_steer", action="store_true", help="Whether to use clamp steering")
-    
+    parser.add_argument("--sv_per_cat", action="store_true", help="Whether to create steering vector per category_id")
+
     # Output arguments
     parser.add_argument("--results_folder", type=str, default="results/responses/", help="Folder to save results")
     parser.add_argument("--use_load_vector", action="store_true", help="Whether to load the steering vector")
@@ -413,7 +484,37 @@ def main():
     eval_list = []
     
     
-    if args.data_set == "feedback":
+    already_have_generations = False
+    if args.data_set == "manipulation":
+        manipulation_data_path = "./steering_vec_functions/manipulation_data/manipulation_dataset.json"
+        dataset_handler = AIManipulationDataset(manipulation_data_path, short_version=args.short_version, instruct_short_response=args.instruct_short_response)
+
+        # Get questions for testing
+        base_questions = dataset_handler.get_base_questions()
+        manipulative_questions, full_data = dataset_handler.get_manipulative_questions()  # Default: subtle
+        
+        if args.sv_per_cat:
+            # Group by category and process each category separately
+            print("Creating steering vectors per category (--sv_per_cat enabled)")
+            categories = group_data_by_category(base_questions, manipulative_questions, full_data)
+            print(f"Grouped questions into {len(categories)} categories")
+            
+            # Process each category Arleady Applies Steering Vector and Generate Responses
+            eval_list = generate_and_steer_per_cat(model, tokenizer, categories, args)
+            already_have_generations = True
+        else:
+            # Only prepare the data, train steer and generate later
+            eval_list = []
+            for i, base_q in enumerate(base_questions):
+                # Create a dictionary for each question
+                question_dict = {
+                    "base_prompt": base_q,
+                    "suggestive_prompt": manipulative_questions[i],
+                    "full_data": full_data[i]
+                }
+                eval_list.append(question_dict)
+
+    elif args.data_set == "feedback":
         # Load dataset
         dataset_handler = DatasetHandler(data_path=args.data_path)
         syco_data = dataset_handler.load_sycophancy_dataset(data_type=args.data_set)
@@ -431,44 +532,24 @@ def main():
         # Prepare evaluation list
         eval_list = prepare_syco_eval_list(syco_data)
     
-    elif args.data_set == "manipulation":
-        manipulation_data_path = "./steering_vec_functions/manipulation_data/manipulation_dataset.json"
-        dataset_handler = AIManipulationDataset(manipulation_data_path, short_version=args.short_version, instruct_short_response=args.instruct_short_response)
-
-        # Get questions for testing
-        base_questions = dataset_handler.get_base_questions()
-        manipulative_questions, full_data = dataset_handler.get_manipulative_questions()  # Default: subtle
-        
-        eval_list = []
-        for i, base_q in enumerate(base_questions):
-            # Create a dictionary for each question
-            question_dict = {
-                "base_prompt": base_q,
-                "suggestive_prompt": manipulative_questions[i],
-                "full_data": full_data[i]
-            }
-            eval_list.append(question_dict)
-
     print(eval_list[0])
 
-    steering_vector = create_steering_vector(   
-        model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.generation_length_optimization, args.temperature, model_name=args.model_name, 
-        use_load_vector=args.use_load_vector, max_norm=args.max_norm, dataset=eval_list, multi_sample=args.multi_sample, use_clamp_steer=args.use_clamp_steer
-    )
-    print(f"The steering vector has norm {steering_vector.vector.norm():.4f}")
+    if already_have_generations is False:
+        steering_vector = create_steering_vector(   
+            model, tokenizer, args.layer, args.num_iters, args.lr, args.generation_length, args.generation_length_optimization, args.temperature, model_name=args.model_name, 
+            use_load_vector=args.use_load_vector, max_norm=args.max_norm, dataset=eval_list, multi_sample=args.multi_sample, use_clamp_steer=args.use_clamp_steer, steer_vector_name= ""
+        )
+        print(f"The steering vector has norm {steering_vector.vector.norm():.4f}")
 
+        # Take subset if specified
+        if args.num_samples < len(eval_list):
+            eval_list = eval_list[:args.num_samples]
+            print(f"Using subset of {len(eval_list)} samples")
 
-    # Take subset if specified
-    if args.num_samples < len(eval_list):
-        eval_list = eval_list[:args.num_samples]
-        print(f"Using subset of {len(eval_list)} samples")
-
-    # Generate steered responses
-    eval_list = generate_steered_responses(eval_list, steering_vector)
-        
-
-    # Generate responses
-    eval_list = generate_model_responses(eval_list, steering_vector)
+        # Generate steered responses
+        eval_list = generate_steered_responses(eval_list, steering_vector)
+        # Generate responses
+        eval_list = generate_model_responses(eval_list, steering_vector)
     
     # Print sample responses if requested
     if args.print_samples:
