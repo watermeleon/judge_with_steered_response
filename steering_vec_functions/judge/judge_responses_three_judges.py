@@ -21,7 +21,9 @@ from steering_vec_functions.judge.judge_responses import (
     load_responses,
     initialize_openai_client,
     create_score_stats,
-    save_results
+    save_results,
+    OpenAIChatResponder,
+    AnthropicChatResponder
 )
 
 # Import the improved evaluation functions
@@ -378,7 +380,10 @@ def main():
         
     # Load responses and initialize client
     settings, responses = load_responses(args.input_file)
-    client = initialize_openai_client(args.api_key)
+    # client = initialize_openai_client(args.api_key)
+    client_class = OpenAIChatResponder if "gpt-4" in args.openai_model else AnthropicChatResponder
+    client = client_class(args.openai_model, temp=0.0, api_key=args.api_key)
+    print(f"Loaded {len(responses)} responses from {args.input_file}")
 
     exp_name = None
     if "exp_name" in settings:

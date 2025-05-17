@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 
 from openai import OpenAI
+import anthropic
 
 
 def setup_environment():
@@ -46,7 +47,6 @@ def load_responses(json_file):
     
     return settings, responses
 
-
 def initialize_openai_client(api_key=None):
     """
     Initialize the OpenAI client with the provided API key.
@@ -64,6 +64,28 @@ def initialize_openai_client(api_key=None):
         raise ValueError("No OpenAI API key provided or found in environment")
         
     return OpenAI(api_key=api_key)
+
+def initialize_anthropic_client(api_key=None):
+    """
+    Initialize the Anthropic client with the provided API key.
+
+    Args:
+        api_key (str, optional): Anthropic API key. If None, uses environment variable.
+
+    Returns:
+        anthropic.Anthropic: Anthropic client
+    """
+    # try:
+    # except ImportError:
+    #     raise ImportError("The 'anthropic' package is required. Install it with 'pip install anthropic'.")
+
+    if api_key is None:
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+
+    if not api_key:
+        raise ValueError("No Anthropic API key provided or found in environment")
+
+    return anthropic.Anthropic(api_key=api_key)
 
 
 def create_score_stats(scores):
@@ -134,3 +156,39 @@ def save_results(responses, summary, input_file, args):
     print(f"Saved judge results to {filename}")
     return filename
 
+class OpenAIChatResponder:
+    def __init__(self, model_slug, temp, api_key=None):
+        self.model_slug = model_slug
+        self.temp = temp
+        self.client = initialize_openai_client(api_key)
+
+    def get_response(self, prompt):
+        response = self.client.chat.completions.create(
+            model=self.model_slug,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.temp,
+            response_format={"type": "json_object"}
+        )
+        return response.choices[0].message.content
+
+class AnthropicChatResponder:
+    def __init__(self, model_slug, temp, api_key=None):
+        self.model_slug = model_slug
+        self.temp = temp
+        self.client = initialize_anthropic_client(api_key)
+
+    def get_response(self, prompt):
+        response = self.client.messages.create(
+            model=self.model_slug,
+            messages=[{"role": "user", "content": prompt}, {"role": "assistant", "content": "{"}],
+            temperature=self.temp,
+            max_tokens=224,
+            stop_sequences=["}"]  # Stop after the closing brace
+            # response_format={"type": "json_object"}
+        )
+        # print(f"Anthropic response: {response}")
+        # response_txt =  response.content[0].text
+        # print(f"Anthropic response text: {response_txt}")
+        json_response = "{" + response.content[0].text + "}"
+        # print(f"Parsed JSON response: {json_response}")
+        return json_response

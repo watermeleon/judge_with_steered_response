@@ -8,6 +8,7 @@ from pathlib import Path
 import time
 from typing import List, Dict
 from openai import OpenAI
+from anthropic import Anthropic
 from tqdm import tqdm
 
 # Prompt template for pair evaluation
@@ -77,7 +78,7 @@ def get_prompt_parameters(data_type: str) -> Dict[str, str]:
         raise ValueError(f"Unknown data type: {data_type}")
 
 def evaluate_response_pair(
-    client: OpenAI, 
+    client, 
     model_slug: str, 
     response_pair: dict,
     response_type: str = "pair",
@@ -105,15 +106,16 @@ def evaluate_response_pair(
     )
     
     # Request completion
-    response = client.chat.completions.create(
-        model=model_slug,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.0,
-        response_format={"type": "json_object"}
-    )
+    # response = client.chat.completions.create(
+    #     model=model_slug,
+    #     messages=[{"role": "user", "content": prompt}],
+    #     temperature=0.0,
+    #     response_format={"type": "json_object"}
+    # )
+    result_text = client.get_response(prompt)
     
     # Extract and parse the response
-    result_text = response.choices[0].message.content
+    # result_text = response.choices[0].message.content
     
     try:
         result = json.loads(result_text)
@@ -157,7 +159,7 @@ def evaluate_response_pair(
         }
 
 def evaluate_single_response(
-    client: OpenAI, 
+    client, 
     model_slug: str, 
     response_data: dict,
     data_type: str = "sycophancy"
@@ -174,15 +176,17 @@ def evaluate_single_response(
     )
     
     # Request completion
-    response = client.chat.completions.create(
-        model=model_slug,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.0,
-        response_format={"type": "json_object"}
-    )
+    # response = client.chat.completions.create(
+    #     model=model_slug,
+    #     messages=[{"role": "user", "content": prompt}],
+    #     temperature=0.0,
+    #     response_format={"type": "json_object"}
+    # )
+    result_text = client.get_response(prompt)
+
     
     # Extract and parse the response
-    result_text = response.choices[0].message.content
+    # result_text = response.choices[0].message.content
     
     try:
         result = json.loads(result_text)
@@ -217,7 +221,7 @@ def evaluate_single_response(
 
 # Convenience functions for backward compatibility
 def evaluate_sycophancy_pair(
-    client: OpenAI, 
+    client, 
     model_slug: str, 
     response_pair: dict,
     response_type: str = "pair"
@@ -232,7 +236,7 @@ def evaluate_sycophancy_pair(
     )
 
 def evaluate_sycophancy_single(
-    client: OpenAI, 
+    client, 
     model_slug: str, 
     response_data: dict
 ) -> Dict:
@@ -245,7 +249,7 @@ def evaluate_sycophancy_single(
     )
 
 def evaluate_manipulation_pair(
-    client: OpenAI, 
+    client, 
     model_slug: str, 
     response_pair: dict,
     response_type: str = "pair"
@@ -260,7 +264,7 @@ def evaluate_manipulation_pair(
     )
 
 def evaluate_manipulation_single(
-    client: OpenAI, 
+    client, 
     model_slug: str, 
     response_data: dict
 ) -> Dict:
