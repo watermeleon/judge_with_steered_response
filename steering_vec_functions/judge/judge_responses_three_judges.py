@@ -352,7 +352,7 @@ def main():
     parser.add_argument("--results_folder", type=str, default="results/judge_results/", help="Folder to save results")
     
     # Judge arguments
-    parser.add_argument("--openai_model", type=str, default="gpt-4o-mini", help="OpenAI model for judging")
+    parser.add_argument("--openai_model", type=str, default="gpt-4.1-mini", help="OpenAI model for judging")
     parser.add_argument("--api_key", type=str, default=None, help="OpenAI API key")
     # parser.add_argument("--data_type", type=str, default="manipulation", 
     #                    choices=["sycophancy", "manipulation"], help="Type of evaluation")
@@ -384,6 +384,8 @@ def main():
     client_class = OpenAIChatResponder if "gpt-4" in args.openai_model else AnthropicChatResponder
     client = client_class(args.openai_model, temp=0.0, api_key=args.api_key)
     print(f"Loaded {len(responses)} responses from {args.input_file}")
+
+    settings['judge_model'] = args.openai_model
 
     exp_name = None
     if "exp_name" in settings:
