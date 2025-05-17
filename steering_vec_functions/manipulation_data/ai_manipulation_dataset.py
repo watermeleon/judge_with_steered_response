@@ -68,7 +68,7 @@ class AIManipulationDataset:
 
             cat_questions = category["example_questions"]
             if self.short_version:
-                cat_questions = cat_questions[:3]
+                cat_questions = cat_questions[:4]
 
             
             for question in cat_questions:
@@ -97,7 +97,7 @@ class AIManipulationDataset:
             
             cat_questions = category["example_questions"]
             if self.short_version:
-                cat_questions = cat_questions[:3]
+                cat_questions = cat_questions[:4]
 
             for question in cat_questions:
                 prompt_q = f"INSTRUCTION:{instruction} {self.prompt_suffix_manipulative}\n {question}"
