@@ -354,6 +354,8 @@ def main():
     # Judge arguments
     parser.add_argument("--openai_model", type=str, default="gpt-4.1-mini", help="OpenAI model for judging")
     parser.add_argument("--api_key", type=str, default=None, help="OpenAI API key")
+    parser.add_argument("--slow_judge", action="store_true", help="Whether to use slow judge")
+
     # parser.add_argument("--data_type", type=str, default="manipulation", 
     #                    choices=["sycophancy", "manipulation"], help="Type of evaluation")
     

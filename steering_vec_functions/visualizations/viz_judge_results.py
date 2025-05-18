@@ -22,7 +22,7 @@ def plot_summary_comparison(summary, font_size_multiplier=1.5, show_means=True):
     data_configs = [
         ('Paired Evaluation', 'scenario2_paired'),
         ('Single Evaluation', 'scenario1_single'),
-        ('Non-steered Comparison', 'scenario3_steered_pairs')
+        ('JUSSA Evaluation', 'scenario3_steered_pairs')
     ]
     
     categories = []
@@ -48,7 +48,7 @@ def plot_summary_comparison(summary, font_size_multiplier=1.5, show_means=True):
     # Define styling parameters once
     styles = {
         'base': {'color': '#3274A1', 'label': 'Base Response'},
-        'suggestive': {'color': '#E1812C', 'label': 'Suggestive Response'}
+        'suggestive': {'color': '#E1812C', 'label': 'Provoked Response'}
     }
     
     # Create bars
@@ -73,7 +73,7 @@ def plot_summary_comparison(summary, font_size_multiplier=1.5, show_means=True):
     }
     
     # Configure plot
-    ax.set_title('Base vs Suggestive Response Scores Across Evaluation Types', 
+    ax.set_title('Base vs Provoked Response Scores Across Evaluation Types', 
                  fontsize=sizes['title'], pad=20)
     ax.set_ylabel('Score', fontsize=sizes['label'])
     ax.set_xticks(index)
@@ -576,7 +576,7 @@ def print_preference_summary(results):
     print(f"    Steered correctness: {steered['suggestive_steered']['mean_steered_correctness']:.2f}")
     print(f"    Improvement: {steered['suggestive_steered']['correctness_improvement']:.2f}")
 
-def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=True):
+def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=True, font_size_multiplier=1.0):
     """
     Plot all four evaluation types (base_single, base_steering, suggestive_single, suggestive_steering)
     for each category with grouped bars.
@@ -585,6 +585,7 @@ def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=Tr
     statistics (dict): Statistics dictionary from process_category_statistics
     color_scheme (str): Color scheme to use - 'blue_orange' or 'purple_green'
     show_std (bool): Whether to include standard deviation as error bars
+    font_size_multiplier (float): Factor to scale all font sizes (default: 1.0)
 
     Returns:
     matplotlib.figure.Figure: The generated figure
@@ -677,24 +678,27 @@ def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=Tr
                    label='Base Single', color=colors['base_single'], alpha=0.9,
                    yerr=base_single_stds if show_std else None, capsize=5)
     bars2 = ax.bar(pos2, base_steered_values, bar_width,
-                   label='Base Steered', color=colors['base_steered'], alpha=0.9,
+                   label='Base JUSSA', color=colors['base_steered'], alpha=0.9,
                    yerr=base_steered_stds if show_std else None, capsize=5)
     bars3 = ax.bar(pos3, suggestive_single_values, bar_width,
-                   label='Suggestive Single', color=colors['suggestive_single'], alpha=0.9,
+                   label='Provoked Single', color=colors['suggestive_single'], alpha=0.9,
                    yerr=suggestive_single_stds if show_std else None, capsize=5)
     bars4 = ax.bar(pos4, suggestive_steered_values, bar_width,
-                   label='Suggestive Steered', color=colors['suggestive_steered'], alpha=0.9,
+                   label='Provoked JUSSA', color=colors['suggestive_steered'], alpha=0.9,
                    yerr=suggestive_steered_stds if show_std else None, capsize=5)
     
     # Customize the plot
-    ax.set_xlabel('Categories', fontsize=12)
-    ax.set_ylabel('Mean Scores', fontsize=12)
-    ax.set_title('Comparison of All Evaluation Types by Category', fontsize=16, fontweight='bold')
+    ax.set_xlabel('Categories', fontsize=12 * font_size_multiplier)
+    ax.set_ylabel('Mean Scores', fontsize=12 * font_size_multiplier)
+    ax.set_title('Comparison of All Evaluation Types by Category', fontsize=15 * font_size_multiplier, fontweight='bold')
     ax.set_xticks(x)
-    ax.set_xticklabels(categories, rotation=45, ha='right', fontsize=11)
+    ax.set_xticklabels(categories, rotation=45, ha='right', fontsize=12 * font_size_multiplier)
+    
+    # Scale the font size of the y axis tick labels (numbers)
+    ax.tick_params(axis='y', labelsize=12 * font_size_multiplier)
     
     # Add legend with better positioning
-    ax.legend(fontsize=11, loc='upper left', bbox_to_anchor=(0.02, 0.98))
+    ax.legend(fontsize=12 * font_size_multiplier, loc='upper center', bbox_to_anchor=(0.5, 0.98), ncol=1)
     
     # Add grid for better readability
     ax.grid(axis='y', linestyle='--', alpha=0.3)
@@ -710,7 +714,7 @@ def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=Tr
                            xytext=(0, 3),  # 3 points vertical offset
                            textcoords="offset points",
                            ha='center', va='bottom',
-                           fontsize=fontsize)
+                           fontsize=fontsize * font_size_multiplier)
     
     # Add labels if values are not too dense
     if len(categories) <= 8:
@@ -721,7 +725,6 @@ def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=Tr
     
     plt.tight_layout()
     return fig
-
 
 
 # if __name__ == "__main__":

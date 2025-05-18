@@ -191,7 +191,7 @@ class AnthropicChatResponder:
                     stop_sequences=["}"]  # Stop after the closing brace
                 )
                 json_response = "{" + response.content[0].text + "}"
-                time.sleep(1)
+                time.sleep(0.5)
                 return json_response
             except Exception as e:
                 if "rate limit" in str(e).lower():
