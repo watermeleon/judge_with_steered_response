@@ -16,6 +16,7 @@ import numpy as np
 
 from openai import OpenAI
 import anthropic
+import time
 
 
 def setup_environment():
@@ -172,23 +173,29 @@ class OpenAIChatResponder:
         return response.choices[0].message.content
 
 class AnthropicChatResponder:
-    def __init__(self, model_slug, temp, api_key=None):
+    def __init__(self, model_slug, temp, api_key=None, slow_judge=False):
         self.model_slug = model_slug
         self.temp = temp
         self.client = initialize_anthropic_client(api_key)
+        self.slow_judge = slow_judge
 
     def get_response(self, prompt):
-        response = self.client.messages.create(
-            model=self.model_slug,
-            messages=[{"role": "user", "content": prompt}, {"role": "assistant", "content": "{"}],
-            temperature=self.temp,
-            max_tokens=224,
-            stop_sequences=["}"]  # Stop after the closing brace
-            # response_format={"type": "json_object"}
-        )
-        # print(f"Anthropic response: {response}")
-        # response_txt =  response.content[0].text
-        # print(f"Anthropic response text: {response_txt}")
-        json_response = "{" + response.content[0].text + "}"
-        # print(f"Parsed JSON response: {json_response}")
-        return json_response
+
+        while True:
+            try:
+                response = self.client.messages.create(
+                    model=self.model_slug,
+                    messages=[{"role": "user", "content": prompt}, {"role": "assistant", "content": "{"}],
+                    temperature=self.temp,
+                    max_tokens=224,
+                    stop_sequences=["}"]  # Stop after the closing brace
+                )
+                json_response = "{" + response.content[0].text + "}"
+                time.sleep(1)
+                return json_response
+            except Exception as e:
+                if "rate limit" in str(e).lower():
+                    print("Rate limit hit. Sleeping for 2 seconds before retrying...")
+                    time.sleep(5)
+                else:
+                    raise
