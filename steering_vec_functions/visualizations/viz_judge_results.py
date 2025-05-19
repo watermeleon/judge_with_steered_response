@@ -576,21 +576,222 @@ def print_preference_summary(results):
     print(f"    Steered correctness: {steered['suggestive_steered']['mean_steered_correctness']:.2f}")
     print(f"    Improvement: {steered['suggestive_steered']['correctness_improvement']:.2f}")
 
-def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=True, font_size_multiplier=1.0):
+# def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=True, font_size_multiplier=1.0):
+#     """
+#     Plot all four evaluation types (base_single, base_steering, suggestive_single, suggestive_steering)
+#     for each category with grouped bars.
+
+#     Parameters:
+#     statistics (dict): Statistics dictionary from process_category_statistics
+#     color_scheme (str): Color scheme to use - 'blue_orange' or 'purple_green'
+#     show_std (bool): Whether to include standard deviation as error bars
+#     font_size_multiplier (float): Factor to scale all font sizes (default: 1.0)
+
+#     Returns:
+#     matplotlib.figure.Figure: The generated figure
+#     """
+#     categories = sorted(statistics.keys())
+    
+#     # Initialize data storage
+#     base_single_values = []
+#     base_steered_values = []
+#     suggestive_single_values = []
+#     suggestive_steered_values = []
+#     base_single_stds = []
+#     base_steered_stds = []
+#     suggestive_single_stds = []
+#     suggestive_steered_stds = []
+    
+#     for category in categories:
+#         if category in statistics:
+#             base_single_mean = statistics[category].get('single_base', {}).get('mean', 0)
+#             base_steered_mean = statistics[category].get('steered_base', {}).get('mean', 0)
+#             suggestive_single_mean = statistics[category].get('single_suggestive', {}).get('mean', 0)
+#             suggestive_steered_mean = statistics[category].get('steered_suggestive', {}).get('mean', 0)
+            
+#             base_single_std = statistics[category].get('single_base', {}).get('std', 0)
+#             base_steered_std = statistics[category].get('steered_base', {}).get('std', 0)
+#             suggestive_single_std = statistics[category].get('single_suggestive', {}).get('std', 0)
+#             suggestive_steered_std = statistics[category].get('steered_suggestive', {}).get('std', 0)
+            
+#             base_single_values.append(base_single_mean)
+#             base_steered_values.append(base_steered_mean)
+#             suggestive_single_values.append(suggestive_single_mean)
+#             suggestive_steered_values.append(suggestive_steered_mean)
+            
+#             base_single_stds.append(base_single_std)
+#             base_steered_stds.append(base_steered_std)
+#             suggestive_single_stds.append(suggestive_single_std)
+#             suggestive_steered_stds.append(suggestive_steered_std)
+    
+#     # Define color schemes - using darker colors for single, lighter for steered
+#     if color_scheme == 'blue_orange':
+#         colors = {
+#             'base_single': '#2E75B6',      # Medium blue
+#             'base_steered': '#AEC7E8',     # Light blue
+#             'suggestive_single': '#D62728',   # Medium red-orange
+#             'suggestive_steered': '#FF9896'   # Light red-orange
+#         }
+#     elif color_scheme == 'purple_green':
+#         colors = {
+#             'base_single': '#6B46C1',      # Medium purple
+#             'base_steered': '#C084FC',     # Light purple
+#             'suggestive_single': '#059669',   # Medium green
+#             'suggestive_steered': '#6EE7B7'   # Light green
+#         }
+#     else:
+#         # Default fallback
+#         colors = {
+#             'base_single': '#2E75B6',
+#             'base_steered': '#AEC7E8',
+#             'suggestive_single': '#D62728',
+#             'suggestive_steered': '#FF9896'
+#         }
+    
+#     # Create the plot
+#     fig, ax = plt.subplots(figsize=(14, 8))
+    
+#     # Set up bar positions
+#     bar_width = 0.18
+#     category_gap = 0.5  # Increased gap between categories
+#     group_gap = 0.03    # Small gap between base and suggestive groups within a category
+    
+#     # Calculate positions for all categories
+#     x_positions = []
+#     current_x = 0
+    
+#     for i in range(len(categories)):
+#         x_positions.append(current_x)
+#         if i < len(categories) - 1:
+#             current_x += 4 * bar_width + group_gap + category_gap
+    
+#     x = np.array(x_positions)
+    
+#     # Calculate positions for each bar within a category
+#     pos1 = x - 1.5 * bar_width - group_gap/2  # Base single
+#     pos2 = x - 0.5 * bar_width - group_gap/2  # Base steered
+#     pos3 = x + 0.5 * bar_width + group_gap/2  # Suggestive single
+#     pos4 = x + 1.5 * bar_width + group_gap/2  # Suggestive steered
+    
+#     # Create bars with optional error bars
+#     bars1 = ax.bar(pos1, base_single_values, bar_width, 
+#                    label='Base Single', color=colors['base_single'], alpha=0.9,
+#                    yerr=base_single_stds if show_std else None, capsize=5)
+#     bars2 = ax.bar(pos2, base_steered_values, bar_width,
+#                    label='Base JUSSA', color=colors['base_steered'], alpha=0.9,
+#                    yerr=base_steered_stds if show_std else None, capsize=5)
+#     bars3 = ax.bar(pos3, suggestive_single_values, bar_width,
+#                    label='Provoked Single', color=colors['suggestive_single'], alpha=0.9,
+#                    yerr=suggestive_single_stds if show_std else None, capsize=5)
+#     bars4 = ax.bar(pos4, suggestive_steered_values, bar_width,
+#                    label='Provoked JUSSA', color=colors['suggestive_steered'], alpha=0.9,
+#                    yerr=suggestive_steered_stds if show_std else None, capsize=5)
+    
+#     # Customize the plot
+#     ax.set_xlabel('Categories', fontsize=12 * font_size_multiplier)
+#     ax.set_ylabel('Mean Scores', fontsize=12 * font_size_multiplier)
+#     ax.set_title('Comparison of All Evaluation Types by Category', fontsize=15 * font_size_multiplier, fontweight='bold')
+#     ax.set_xticks(x)
+#     ax.set_xticklabels(categories, rotation=45, ha='right', fontsize=12 * font_size_multiplier)
+    
+#     # Scale the font size of the y axis tick labels (numbers)
+#     ax.tick_params(axis='y', labelsize=12 * font_size_multiplier)
+    
+#     # Add legend with better positioning
+#     ax.legend(fontsize=12 * font_size_multiplier, loc='upper center', bbox_to_anchor=(0.5, 0.98), ncol=1)
+    
+#     # Add grid for better readability
+#     ax.grid(axis='y', linestyle='--', alpha=0.3)
+#     ax.set_axisbelow(True)
+    
+#     # Add value labels on bars (optional)
+#     def add_value_labels(bars, fontsize=8):
+#         for bar in bars:
+#             height = bar.get_height()
+#             if height > 0:
+#                 ax.annotate(f'{height:.2f}',
+#                            xy=(bar.get_x() + bar.get_width() / 2, height),
+#                            xytext=(0, 3),  # 3 points vertical offset
+#                            textcoords="offset points",
+#                            ha='center', va='bottom',
+#                            fontsize=fontsize * font_size_multiplier)
+    
+#     # Add labels if values are not too dense
+#     if len(categories) <= 8:
+#         add_value_labels(bars1)
+#         add_value_labels(bars2)
+#         add_value_labels(bars3)
+#         add_value_labels(bars4)
+    
+#     plt.tight_layout()
+#     return fig
+
+def plot_category_comparison(statistics, category_groups=None, color_scheme='blue_orange', show_std=True, font_size_multiplier=1.0, fig_size=(16, 8)):
     """
-    Plot all four evaluation types (base_single, base_steering, suggestive_single, suggestive_steering)
-    for each category with grouped bars.
+    Plot all four evaluation types for each category with grouped bars,
+    with categories organized by their higher-level category groups.
 
     Parameters:
     statistics (dict): Statistics dictionary from process_category_statistics
+    category_groups (dict): Mapping of categories to their higher-level groups
+                           If None, default grouping will be used
     color_scheme (str): Color scheme to use - 'blue_orange' or 'purple_green'
     show_std (bool): Whether to include standard deviation as error bars
-    font_size_multiplier (float): Factor to scale all font sizes (default: 1.0)
+    font_size_multiplier (float): Factor to scale all font sizes
 
     Returns:
     matplotlib.figure.Figure: The generated figure
     """
-    categories = sorted(statistics.keys())
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from matplotlib.patches import Rectangle
+    
+    # Define default category grouping if not provided
+    if category_groups is None:
+        category_groups = {
+            # Group 1: Skewed Presentation
+            'cherry_picked_evidence': 'Skewed Presentation',
+            'false_dichotomy': 'Skewed Presentation',
+            'false_transparency': 'Skewed Presentation',
+            'assistant_self_interest': 'Skewed Presentation',
+            'strategic_omission': 'Skewed Presentation',
+            
+            # Group 2: Misleading Claims and False Information
+            'risk_distortion': 'Misleading Claims',
+            'false_causality': 'Misleading Claims',
+            'manufactured_consensus': 'Misleading Claims',
+            'false_credentials': 'Misleading Claims',
+            'hidden_premises': 'Misleading Claims',
+            
+            # Group 3: Emotional and Psychological Pressure
+            'emotional_manipulation': 'Emotional Pressure',
+            'manufactured_scarcity': 'Emotional Pressure',
+            'artificial_time_pressure': 'Emotional Pressure'
+        }
+    
+    # Group categories and sort within groups
+    available_categories = [cat for cat in statistics.keys() if cat in category_groups]
+    
+    # Group by higher-level category
+    grouped_categories = {}
+    for cat in available_categories:
+        group = category_groups.get(cat, 'Other')
+        if group not in grouped_categories:
+            grouped_categories[group] = []
+        grouped_categories[group].append(cat)
+    
+    # Sort categories within each group alphabetically
+    for group in grouped_categories:
+        grouped_categories[group].sort()
+    
+    # Define the display order of the groups
+    group_order = ['Skewed Presentation', 'Misleading Claims', 'Emotional Pressure', 'Other']
+    
+    # Create a flat list of categories in the correct order
+    categories = []
+    for group in group_order:
+        if group in grouped_categories:
+            categories.extend(grouped_categories[group])
     
     # Initialize data storage
     base_single_values = []
@@ -632,12 +833,22 @@ def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=Tr
             'suggestive_single': '#D62728',   # Medium red-orange
             'suggestive_steered': '#FF9896'   # Light red-orange
         }
+        group_colors = {
+            'Skewed Presentation': '#E6F2FF',  # Very light blue
+            'Misleading Claims': '#FFF2E6',    # Very light orange
+            'Emotional Pressure': '#F2FFE6'    # Very light green
+        }
     elif color_scheme == 'purple_green':
         colors = {
             'base_single': '#6B46C1',      # Medium purple
             'base_steered': '#C084FC',     # Light purple
             'suggestive_single': '#059669',   # Medium green
             'suggestive_steered': '#6EE7B7'   # Light green
+        }
+        group_colors = {
+            'Skewed Presentation': '#F3EBFF',  # Very light purple
+            'Misleading Claims': '#EBFFF3',    # Very light green
+            'Emotional Pressure': '#FFF3EB'    # Very light orange
         }
     else:
         # Default fallback
@@ -647,23 +858,37 @@ def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=Tr
             'suggestive_single': '#D62728',
             'suggestive_steered': '#FF9896'
         }
+        group_colors = {
+            'Skewed Presentation': '#E6F2FF',
+            'Misleading Claims': '#FFF2E6',
+            'Emotional Pressure': '#F2FFE6'
+        }
     
     # Create the plot
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots(figsize=fig_size)  # Increased size for better readability
     
     # Set up bar positions
-    bar_width = 0.18
-    category_gap = 0.5  # Increased gap between categories
-    group_gap = 0.03    # Small gap between base and suggestive groups within a category
+    # bar_width = 0.18
+    bar_width = 0.22
+    category_gap = 0.3  
+    group_gap = 0.03    
+    extra_group_gap = 0.7  # Additional gap between different higher-level groups
     
-    # Calculate positions for all categories
+    # Calculate positions for all categories with extra space between groups
     x_positions = []
     current_x = 0
+    last_group = None
     
-    for i in range(len(categories)):
+    for i, category in enumerate(categories):
+        group = category_groups.get(category, 'Other')
+        
+        # Add extra gap between different groups
+        if last_group is not None and group != last_group:
+            current_x += extra_group_gap
+        
         x_positions.append(current_x)
-        if i < len(categories) - 1:
-            current_x += 4 * bar_width + group_gap + category_gap
+        current_x += 4 * bar_width + group_gap + category_gap
+        last_group = group
     
     x = np.array(x_positions)
     
@@ -687,24 +912,79 @@ def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=Tr
                    label='Provoked JUSSA', color=colors['suggestive_steered'], alpha=0.9,
                    yerr=suggestive_steered_stds if show_std else None, capsize=5)
     
-    # Customize the plot
-    ax.set_xlabel('Categories', fontsize=12 * font_size_multiplier)
-    ax.set_ylabel('Mean Scores', fontsize=12 * font_size_multiplier)
-    ax.set_title('Comparison of All Evaluation Types by Category', fontsize=15 * font_size_multiplier, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(categories, rotation=45, ha='right', fontsize=12 * font_size_multiplier)
+    # Add background coloring for each group
+    last_group = None
+    group_start_x = 0
+    group_spans = {}  # Store the x-spans of each group
     
+    for i, category in enumerate(categories):
+        group = category_groups.get(category, 'Other')
+        
+        # Check if we're starting a new group
+        if last_group != group:
+            if last_group is not None:
+                # Save the span of the previous group
+                end_x = x[i-1] + 2 * bar_width + group_gap/2
+                group_spans[last_group] = (group_start_x, end_x)
+            
+            # Start of a new group
+            group_start_x = x[i] - 2 * bar_width - group_gap/2
+            last_group = group
+    
+    # Add the last group
+    if last_group is not None:
+        end_x = x[-1] + 2 * bar_width + group_gap/2
+        group_spans[last_group] = (group_start_x, end_x)
+    
+    # Draw background rectangles for groups
+    y_min, y_max = ax.get_ylim()
+    ax.set_ylim(y_min, y_max * 1.1)  # Make room for group labels
+    
+    for group, (start_x, end_x) in group_spans.items():
+        width = end_x - start_x
+        rect = Rectangle((start_x, y_min), width, y_max - y_min,
+                         color=group_colors.get(group, '#FFFFFF'),
+                         alpha=0.3, zorder=0)
+        ax.add_patch(rect)
+        
+        # Add group label at the top
+        mid_x = start_x + width/2
+        ax.text(mid_x, y_max * 0.97, group, 
+                ha='center', va='bottom', 
+                fontsize=12 * font_size_multiplier,
+                fontweight='bold')
+    
+    # Customize the plot
+    # ax.set_xlabel('Categories', fontsize=12 * font_size_multiplier)
+    ax.set_ylabel('Mean Scores', fontsize=12 * font_size_multiplier)
+    ax.set_title('Comparison of Evaluation Types by Category and Group', 
+                fontsize=15 * font_size_multiplier, fontweight='bold')
+    ax.set_xticks(x)
+    #  prev version:
+
+    labels = [cat.replace('_', ' ').title() for cat in categories]
+
+    ax.set_xticklabels(labels, 
+                    rotation=-25, ha='left', fontsize=12 * font_size_multiplier)    
+
+
     # Scale the font size of the y axis tick labels (numbers)
     ax.tick_params(axis='y', labelsize=12 * font_size_multiplier)
     
-    # Add legend with better positioning
-    ax.legend(fontsize=12 * font_size_multiplier, loc='upper center', bbox_to_anchor=(0.5, 0.98), ncol=1)
-    
+
+    ax.legend(
+        fontsize=12 * font_size_multiplier,
+        loc='upper center',
+        bbox_to_anchor=(0.5, 1.19),
+        ncol=4,
+        borderaxespad=0
+    )
+
     # Add grid for better readability
     ax.grid(axis='y', linestyle='--', alpha=0.3)
     ax.set_axisbelow(True)
     
-    # Add value labels on bars (optional)
+    # Add value labels on bars if not too crowded
     def add_value_labels(bars, fontsize=8):
         for bar in bars:
             height = bar.get_height()
@@ -717,13 +997,20 @@ def plot_category_comparison(statistics, color_scheme='blue_orange', show_std=Tr
                            fontsize=fontsize * font_size_multiplier)
     
     # Add labels if values are not too dense
-    if len(categories) <= 8:
+    if len(categories) <= 10:
         add_value_labels(bars1)
         add_value_labels(bars2)
         add_value_labels(bars3)
         add_value_labels(bars4)
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    # set y limit to 8
+    # ax.set_ylim(0, 8)
+    # ax.set_ylim(0, 10)
     
     plt.tight_layout()
+    # plt.tight_layout(rect=[0, 0, 0.85, 1])
     return fig
 
 
