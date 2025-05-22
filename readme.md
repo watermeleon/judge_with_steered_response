@@ -11,6 +11,8 @@ judged_responses_manipulation_Claude_FINAL.json
 judged_responses_manipulation_GPT4Nano_FINAL.json
 judged_responses_sycophancy_GPT4Nano.json
 ```
+To rerun the vizualizations from the paper use the notebook: `viz_judge_results_paper.ipynb` under `./notebooks`
+
 
 # Minimal Setup
 
