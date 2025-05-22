@@ -356,9 +356,6 @@ def main():
     parser.add_argument("--api_key", type=str, default=None, help="OpenAI API key")
     parser.add_argument("--slow_judge", action="store_true", help="Whether to use slow judge")
 
-    # parser.add_argument("--data_type", type=str, default="manipulation", 
-    #                    choices=["sycophancy", "manipulation"], help="Type of evaluation")
-    
     # Scenario selection
     parser.add_argument("--run_scenario1", action="store_true", help="Run single response evaluation")
     parser.add_argument("--run_scenario2", action="store_true", help="Run paired evaluation")
@@ -382,7 +379,6 @@ def main():
         
     # Load responses and initialize client
     settings, responses = load_responses(args.input_file)
-    # client = initialize_openai_client(args.api_key)
     client_class = OpenAIChatResponder if "gpt-4" in args.openai_model else AnthropicChatResponder
     client = client_class(args.openai_model, temp=0.0, api_key=args.api_key)
     print(f"Loaded {len(responses)} responses from {args.input_file}")
@@ -401,7 +397,6 @@ def main():
     data_type = "sycophancy" if data_type == "feedback" else data_type
     print(f"# Data type found: {data_type}")
     
-    # responses = responses[:5]
     # Run evaluations
     responses = run_evaluations(responses, client, args.openai_model, data_type)
     
@@ -432,7 +427,6 @@ def main():
         full_summary['statistics'] = statistics
         wandb.log({"single_steered_fig": wandb.Image(fig)})
 
-    # full_summary['single_steered_fig'] = fig
     wandb.log(full_summary)
     table = display_comparison_table(metric_summary)
     score_count_table = wandb.Table(dataframe=table)

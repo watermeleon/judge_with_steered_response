@@ -85,7 +85,6 @@ class SteeringVector:
         input_ids = self.tokenizer(formatted_question, return_tensors='pt').input_ids
         
         generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens, do_sample=False)
-                                            #    , temperature=self.temperature)
         generated_tokens_only = generated_tokens[:, input_ids.shape[-1]:]
         
         return self.tokenizer.batch_decode(generated_tokens_only, skip_special_tokens=True)[0]
@@ -107,7 +106,6 @@ class SteeringVector:
         with steering_opt.hf_hooks_contextmanager(self.model, [steering_hook]): 
             input_ids = self.tokenizer(formatted_question, return_tensors='pt').input_ids
             generated_tokens = self.model.generate(input_ids, max_new_tokens=max_tokens, do_sample=False)
-                                                #    True, temperature=self.temperature)
         
         generated_tokens_only = generated_tokens[:, input_ids.shape[-1]:]
         return self.tokenizer.batch_decode(generated_tokens_only, skip_special_tokens=True)[0]
@@ -117,14 +115,11 @@ class SteeringVector:
         
         if self.vector is None:
             raise ValueError("No steering vector to save. Call optimize() first.")
-        # def save_steering_vector(steering_vector, model_name, layer_name, exp_name="", folder="./steering_vectors"):
 
-        # return save_steering_vector(self.vector, filepath, model_name, layer_name or str(self.layer))
         return save_steering_vector(self.vector, model_name, layer_name or str(self.layer), folder=folder)
     
     def load(self, folder="./results/steering_vectors", model_name=None, layer_name=None):
         """Load a steering vector from a file."""
-        # def load_steering_vector(model_name, layer_name, exp_name="", folder="./steering_vectors"):
 
         self.vector = load_steering_vector(model_name, layer_name or str(self.layer), folder=folder)
         return self.vector

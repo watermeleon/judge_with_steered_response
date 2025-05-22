@@ -2,6 +2,15 @@
 
 This repository contains a framework for optimizing and evaluating steering vectors for language models to aid LLM-judges in detecting manipulative responses.
 
+## Dataset and Judge results:
+The manipulation dataset is stored in :
+
+The results for the GPT4.1-nano on the sycophancy and manipulation dataset, and Claude3.5-haiku on manipulation dataset are stored in the folder `results/final_judge_results/`:
+```
+judged_responses_manipulation_Claude_FINAL.json
+judged_responses_manipulation_GPT4Nano_FINAL.json
+judged_responses_sycophancy_GPT4Nano.json
+```
 
 # Minimal Setup
 
@@ -34,7 +43,7 @@ The workflow consists of two main steps: generating responses with steering vect
 Generate steered responses using the following command:
 
 ```bash
-python -u -m steering_vec_functions.feedback_steering_clean \
+python -u -m steering_vec_functions.generate_provoked_and_steered_responses \
     --data_set manipulation \
     --num_samples 20 \
     --num_iters 20 \
@@ -52,7 +61,7 @@ Evaluate the generated responses using:
 
 ```bash
 python -m steering_vec_functions.judge.judge_responses_three_judges \
-    --input_file results/responses/responses_all_20250513_v1.json \
+    --input_file results/responses/your_generated_response_file.json \
     --openai_model gpt-4.1-nano \
     --data_type manipulation
 ```
@@ -62,7 +71,7 @@ This will analyze the responses and save evaluation results in the `results/judg
 ## Configuration Options
 
 The response generation script supports various parameters including:
-- Different datasets (`manipulation`, `sycophancy`, `feedback`)
+- Different datasets (`manipulation`, `feedback`)
 - Model configurations
 - Steering vector parameters
 - Output format options
