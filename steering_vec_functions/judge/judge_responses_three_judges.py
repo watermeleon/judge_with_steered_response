@@ -49,8 +49,8 @@ def run_evaluations(responses, client, model_slug, data_type="manipulation"):
     print(f"Running evaluations for {data_type}")
     
     for item in tqdm(responses, desc="Processing responses"):
-        # Scenario 1: Single response evaluation
         if 'base_prompt' in item and 'suggestive_prompt' in item:
+            # Scenario 1: Single response evaluation
             # Evaluate base response
             base_single = evaluate_single_response(
                 client, model_slug, 
@@ -77,8 +77,9 @@ def run_evaluations(responses, client, model_slug, data_type="manipulation"):
                 'suggestive': suggestive_single['response_A']
             }
             
-            # Scenario 2: Paired evaluation (base vs suggestive)
-            paired_result = evaluate_response_pair(
+            # Scenario 2: Paired evaluation (base vs suggestive) - Run twice with different orders
+            # First evaluation: base as A, suggestive as B
+            paired_result_base_first = evaluate_response_pair(
                 client, model_slug,
                 {
                     'user_question': item['base_prompt'],
@@ -89,7 +90,57 @@ def run_evaluations(responses, client, model_slug, data_type="manipulation"):
                 data_type=data_type
             )
             
-            item['judge_base_vs_suggestive'] = paired_result
+            # Second evaluation: suggestive as A, base as B  
+            paired_result_suggestive_first = evaluate_response_pair(
+                client, model_slug,
+                {
+                    'user_question': item['base_prompt'],
+                    'first_comment': item['suggestive_response'],
+                    'second_comment': item['base_response']
+                },
+                response_type="pair",
+                data_type=data_type
+            )
+            
+            # Extract scores correctly from both evaluations
+            # From base_first: base=A, suggestive=B
+            base_score_1 = paired_result_base_first['response_A']['correctness']
+            base_metric_1 = paired_result_base_first['response_A']['metric_score']
+            sugg_score_1 = paired_result_base_first['response_B']['correctness'] 
+            sugg_metric_1 = paired_result_base_first['response_B']['metric_score']
+            sugg_preferred_1 = 1 if paired_result_base_first['preferred_response'] == 'B' else 0
+            
+            # From suggestive_first: suggestive=A, base=B
+            base_score_2 = paired_result_suggestive_first['response_B']['correctness']
+            base_metric_2 = paired_result_suggestive_first['response_B']['metric_score']
+            sugg_score_2 = paired_result_suggestive_first['response_A']['correctness']
+            sugg_metric_2 = paired_result_suggestive_first['response_A']['metric_score']
+            sugg_preferred_2 = 1 if paired_result_suggestive_first['preferred_response'] == 'A' else 0
+            
+            # Calculate averaged scores
+            avg_base_correctness = (base_score_1 + base_score_2) / 2
+            avg_base_metric = (base_metric_1 + base_metric_2) / 2
+            avg_sugg_correctness = (sugg_score_1 + sugg_score_2) / 2
+            avg_sugg_metric = (sugg_metric_1 + sugg_metric_2) / 2
+            avg_sugg_preferred_raw = (sugg_preferred_1 + sugg_preferred_2) / 2
+            
+            # Create averaged result in original format (maintains backward compatibility)
+            averaged_result = {
+                'preferred_response': 'B' if avg_sugg_preferred_raw > 0.5 else 'A',
+                'response_A': {
+                    'correctness': round(avg_base_correctness),
+                    'metric_score': round(avg_base_metric)
+                },
+                'response_B': {
+                    'correctness': round(avg_sugg_correctness), 
+                    'metric_score': round(avg_sugg_metric)
+                }
+            }
+            
+            # Store all three results: individual ones + averaged (for backward compatibility)
+            item['judge_base_vs_suggestive'] = averaged_result  # Main result for existing code
+            item['judge_base_vs_suggestive_base_first'] = paired_result_base_first  # base=A, suggestive=B
+            item['judge_base_vs_suggestive_suggestive_first'] = paired_result_suggestive_first  # suggestive=A, base=B
         
         # Scenario 3: Steered vs non-steered evaluation
         if 'base_steered_response' in item and 'suggestive_steered_response' in item:
@@ -175,10 +226,11 @@ def compute_statistics_for_metric(responses, metric_key="metric_score"):
             
             summary['scenario1_single']['gap'] = gap_stats
     
-    # Scenario 2: Paired evaluation
+    # Scenario 2: Paired evaluation (now using averaged results for backward compatibility)
     paired_items = [r for r in responses if 'judge_base_vs_suggestive' in r]
     
     if paired_items:
+        # Use the averaged results (maintains original structure)
         base_scores = [r['judge_base_vs_suggestive']['response_A'][metric_key] for r in paired_items]
         suggestive_scores = [r['judge_base_vs_suggestive']['response_B'][metric_key] for r in paired_items]
         preferred_b = [r['judge_base_vs_suggestive']['preferred_response'] == 'B' for r in paired_items]
@@ -187,11 +239,41 @@ def compute_statistics_for_metric(responses, metric_key="metric_score"):
         summary['scenario2_paired']['suggestive'] = create_score_stats(suggestive_scores)
         summary['scenario2_paired']['suggestive_preferred_percent'] = (sum(preferred_b) / len(preferred_b)) * 100
         
-        # Calculate gap
+        # Calculate gap using averaged results
         gaps = [s - b for s, b in zip(suggestive_scores, base_scores)]
         gap_stats = create_score_stats(gaps)
         gap_stats['positive_percent'] = sum(1 for gap in gaps if gap > 0) / len(gaps) * 100
         summary['scenario2_paired']['gap'] = gap_stats
+        
+        # ADDITIONAL: Analyze ordering effects using individual results
+        base_first_items = [r for r in responses if 'judge_base_vs_suggestive_base_first' in r]
+        sugg_first_items = [r for r in responses if 'judge_base_vs_suggestive_suggestive_first' in r]
+        
+        if base_first_items and sugg_first_items:
+            # Extract individual ordering results 
+            base_scores_bf = [r['judge_base_vs_suggestive_base_first']['response_A'][metric_key] for r in base_first_items]
+            sugg_scores_bf = [r['judge_base_vs_suggestive_base_first']['response_B'][metric_key] for r in base_first_items] 
+            preferred_sugg_bf = [r['judge_base_vs_suggestive_base_first']['preferred_response'] == 'B' for r in base_first_items]
+            
+            base_scores_sf = [r['judge_base_vs_suggestive_suggestive_first']['response_B'][metric_key] for r in sugg_first_items]
+            sugg_scores_sf = [r['judge_base_vs_suggestive_suggestive_first']['response_A'][metric_key] for r in sugg_first_items]
+            preferred_sugg_sf = [r['judge_base_vs_suggestive_suggestive_first']['preferred_response'] == 'A' for r in sugg_first_items]
+            
+            # Store ordering analysis
+            summary['scenario2_paired']['ordering_analysis'] = {
+                'base_first_ordering': {
+                    'suggestive_preferred_percent': (sum(preferred_sugg_bf) / len(preferred_sugg_bf)) * 100,
+                    'mean_base_score': sum(base_scores_bf) / len(base_scores_bf),
+                    'mean_suggestive_score': sum(sugg_scores_bf) / len(sugg_scores_bf)
+                },
+                'suggestive_first_ordering': {
+                    'suggestive_preferred_percent': (sum(preferred_sugg_sf) / len(preferred_sugg_sf)) * 100,
+                    'mean_base_score': sum(base_scores_sf) / len(base_scores_sf),
+                    'mean_suggestive_score': sum(sugg_scores_sf) / len(sugg_scores_sf)
+                },
+                'order_bias_detected': abs((sum(preferred_sugg_bf) / len(preferred_sugg_bf)) - 
+                                          (sum(preferred_sugg_sf) / len(preferred_sugg_sf))) > 0.1
+            }
     
     # Scenario 3: Steered evaluation
     base_steered_items = [r for r in responses if 'judge_base_steered_pair' in r]
@@ -303,7 +385,16 @@ def print_metric_summary(summary, metric_name="manipulation"):
                 print(f"    Higher suggestive: {value['positive_percent']:.1f}%")
             elif key == 'suggestive_preferred_percent':
                 print(f"  Suggestive preferred: {value:.1f}%")
-            else:
+            elif key == 'ordering_analysis':
+                print(f"  Order Bias Analysis:")
+                oa = value
+                bf_pref = oa['base_first_ordering']['suggestive_preferred_percent']
+                sf_pref = oa['suggestive_first_ordering']['suggestive_preferred_percent']
+                print(f"    Base-first ordering: {bf_pref:.1f}% preferred suggestive")
+                print(f"    Suggestive-first ordering: {sf_pref:.1f}% preferred suggestive")
+                print(f"    Order bias detected: {'Yes' if oa['order_bias_detected'] else 'No'}")
+                print(f"    Bias magnitude: {abs(bf_pref - sf_pref):.1f}%")
+            elif isinstance(value, dict) and 'mean' in value:
                 print(f"  {key.title()}: Mean = {value['mean']:.2f}, Std = {value['std']:.2f}")
     
     # Scenario 3

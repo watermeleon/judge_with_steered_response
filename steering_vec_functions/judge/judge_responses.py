@@ -178,11 +178,20 @@ class AnthropicChatResponder:
         self.temp = temp
         self.client = initialize_anthropic_client(api_key)
         self.slow_judge = slow_judge
+        self.last_response_time = None
+        self.min_interval = 1.2  # 50 requests per minute => 1.2 seconds per request
 
     def get_response(self, prompt):
-
         while True:
             try:
+                now = time.time()
+                if self.last_response_time is not None:
+                    elapsed = now - self.last_response_time
+                    if elapsed < self.min_interval:
+                        sleep_time = self.min_interval - elapsed
+                        time.sleep(sleep_time)
+                        
+                self.last_response_time = time.time()
                 response = self.client.messages.create(
                     model=self.model_slug,
                     messages=[{"role": "user", "content": prompt}, {"role": "assistant", "content": "{"}],
@@ -191,11 +200,10 @@ class AnthropicChatResponder:
                     stop_sequences=["}"]  # Stop after the closing brace
                 )
                 json_response = "{" + response.content[0].text + "}"
-                time.sleep(0.5)
                 return json_response
             except Exception as e:
                 if "rate limit" in str(e).lower():
-                    print("Rate limit hit. Sleeping for 2 seconds before retrying...")
+                    print("Rate limit hit. Sleeping for 5 seconds before retrying...")
                     time.sleep(5)
                 else:
                     raise
