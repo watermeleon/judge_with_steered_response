@@ -454,6 +454,7 @@ def main():
     parser.add_argument("--run_all", action="store_true", help="Run all scenarios")
     
     args = parser.parse_args()
+    print("Judge type is:", args.openai_model)
 
     
     # Default to running all scenarios

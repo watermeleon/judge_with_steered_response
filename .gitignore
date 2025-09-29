@@ -16,4 +16,5 @@ results/*
 !*judged_responses_manipulation_GPT4Nano_FINAL.json
 !*judged_responses_sycophancy_GPT4Nano.json
 
-
+notebooks/figs/
+!*/human_annotation
