@@ -5,14 +5,11 @@ This repository contains a framework for optimizing and evaluating steering vect
 ## Dataset and Judge results:
 The manipulation dataset is stored in :
 
-The results for the GPT4.1-nano on the sycophancy and manipulation dataset, and Claude3.5-haiku on manipulation dataset are stored in the folder `results/final_judge_results/`:
-```
-judged_responses_manipulation_Claude_FINAL.json
-judged_responses_manipulation_GPT4Nano_FINAL.json
-judged_responses_sycophancy_GPT4Nano.json
-```
-To rerun the vizualizations from the paper use the notebook: `viz_judge_results_paper.ipynb` under `./notebooks`
+The results for the GPT4.1-nano on the sycophancy and manipulation dataset, and Claude3.5-haiku on the manipulation dataset are stored in the folder `results/final_judge_results/`. For each dataset and judge there is a separate file containing the target LLM responses and the scores provided by the LLM judge. 
+To rerun the visualizations from the paper, use the notebook: `viz_judge_results_paper.ipynb` under `./notebooks`
 
+Human annotation results are stored in `results/human_annotation/`, divided over split A and B, each containing the results for 65 questions. The responses are annonymized per split so that the prolific ids are substituted by annotator_1, or other numbers, so that it is still retrievable which responses belonged to the same annotator.
+To load and process the human annotator results, check out `notebooks/load_human_annoation_results.ipynb`
 
 # Minimal Setup
 
@@ -29,8 +26,8 @@ This project provides tools for generating and evaluating AI model responses usi
 
 ```bash
 # Clone the repository
-git clone [repository-url]
-cd [repository-name]
+git clone git@github.com:watermeleon/judge_with_steered_response.git
+cd judge_with_steered_response
 
 # Install required dependencies
 pip install -r requirements.txt
@@ -73,7 +70,7 @@ This will analyze the responses and save evaluation results in the `results/judg
 ## Configuration Options
 
 The response generation script supports various parameters including:
-- Different datasets (`manipulation`, `feedback`)
+- Different datasets (`manipulation`, `sycophancy`)
 - Model configurations
 - Steering vector parameters
 - Output format options
