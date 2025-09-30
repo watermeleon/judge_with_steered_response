@@ -10,11 +10,13 @@
 redundant/
 !*manipulation_dataset.json
 wandb/
+
+# results/*
+# !results/final_judge_results/*.json
+
 results/*
 !results/final_judge_results/
-!*judged_responses_manipulation_Claude_FINAL.json
-!*judged_responses_manipulation_GPT4Nano_FINAL.json
-!*judged_responses_sycophancy_GPT4Nano.json
+!results/final_judge_results/**/*.json
 
 notebooks/figs/
 !*/human_annotation
