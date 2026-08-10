@@ -20,3 +20,6 @@ results/*
 
 notebooks/figs/
 !*/human_annotation
+
+# local write-up of the human-evaluation statistics, not for the public repo
+results/human_annotation/STATS.md

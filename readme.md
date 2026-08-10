@@ -11,6 +11,25 @@ To rerun the visualizations from the paper, use the notebook: `viz_judge_results
 Human annotation results are stored in `results/human_annotation/`, divided over split A and B, each containing the results for 65 questions. The responses are annonymized per split so that the prolific ids are substituted by annotator_1, or other numbers, so that it is still retrievable which responses belonged to the same annotator.
 To load and process the human annotator results, check out `notebooks/load_human_annoation_results.ipynb`
 
+### Inter-annotator agreement
+Krippendorff's alpha (plus Fleiss' kappa and raw percent agreement), combined and per manipulation category:
+
+```bash
+python -m steering_vec_functions.human_annotation.annotator_agreement
+```
+
+This prints the tables and writes `results/human_annotation/inter_annotator_agreement.json`. Use `--n_boot 0` to skip the bootstrap confidence intervals (the run takes ~50s with them, ~1s without), and `--leave_out_cats ...` to restrict the scope to a subset of categories. The metrics themselves live in `steering_vec_functions/human_annotation/agreement_metrics.py` and are numpy-only; running that file directly checks them against the published worked example. Section 3 of `notebooks/load_human_annoation_results.ipynb` calls the same functions.
+
+Two companion scripts cover the rest of the human evaluation statistics:
+
+```bash
+# correctness means and Wilcoxon signed-rank tests between base / provoked / steered-provoked
+python -m steering_vec_functions.human_annotation.response_quality_stats
+
+# marginal rates, the Figure 3 headline percentages, and human vs LLM-judge cross-method tests
+python -m steering_vec_functions.human_annotation.agreement_diagnostics
+```
+
 # Minimal Setup
 
 This project provides tools for generating and evaluating AI model responses using steering vectors, with specific focus on detecting manipulation and sycophancy behaviors.
