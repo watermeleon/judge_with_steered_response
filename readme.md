@@ -45,7 +45,7 @@ This project provides tools for generating and evaluating AI model responses usi
 
 ```bash
 # Clone the repository
-git clone git@github.com:watermeleon/judge_with_steered_response.git
+git clone [repo link]
 cd judge_with_steered_response
 
 # Install required dependencies
